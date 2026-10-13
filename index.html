@@ -1,0 +1,692 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style><meta name="description" content="Imóveis retomados de bancos ranqueados por oportunidade, atualizados todo dia."><title>Radar Retomados</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><style>
+/* Layout: barra de ferramentas + resumo; abaixo, filtros à esquerda e ranking à direita; detalhe em painel lateral (tela cheia no celular) */
+:root{
+  --bg:#F2F4F3; --surface:#FFFFFF; --sunk:#E8ECEA; --ink:#14201C; --muted:#5A6A65; --line:#D5DDDA;
+  --accent:#2446B8; --accent-ink:#FFFFFF; --accent-soft:#E3E8FA;
+  --good:#16794F; --good-soft:#DDF1E7; --mid:#A86B00; --mid-soft:#FBEFD6; --low:#6B7672; --low-soft:#E6EAE8;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1513; --surface:#151F1C; --sunk:#1B2724; --ink:#E5EDEA; --muted:#94A49F; --line:#2A3834;
+  --accent:#8EA6FF; --accent-ink:#0E1513; --accent-soft:#1F2A4D;
+  --good:#5DD39E; --good-soft:#143428; --mid:#F2B84B; --mid-soft:#3A2D12; --low:#94A49F; --low-soft:#232E2B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1513; --surface:#151F1C; --sunk:#1B2724; --ink:#E5EDEA; --muted:#94A49F; --line:#2A3834;
+  --accent:#8EA6FF; --accent-ink:#0E1513; --accent-soft:#1F2A4D;
+  --good:#5DD39E; --good-soft:#143428; --mid:#F2B84B; --mid-soft:#3A2D12; --low:#94A49F; --low-soft:#232E2B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:18px}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--display);font-stretch:85%;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* topo */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
+.brand h1{font-size:clamp(28px,4.4vw,40px);font-weight:800;line-height:1}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:500;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.source{font-size:13px;color:var(--muted)}
+.source b{color:var(--ink);font-weight:600}
+
+.notice{display:flex;gap:10px;align-items:flex-start;background:var(--mid-soft);border:1px solid color-mix(in srgb,var(--mid) 35%,transparent);padding:10px 14px;border-radius:var(--r);font-size:14px}
+.notice strong{color:var(--mid)}
+.error{background:var(--low-soft);border-color:var(--line)}
+.drop{border:1.5px dashed var(--accent);background:var(--accent-soft)}
+
+/* resumo */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.kpi{padding:14px 16px;border-left:1px solid var(--line);display:grid;gap:2px}
+.kpi:first-child{border-left:0}
+.kpi .v{font-family:var(--display);font-size:30px;font-weight:700;font-stretch:90%;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .l{font-size:13px;color:var(--muted)}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}}
+
+/* corpo */
+.main{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.filters{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){.filters{position:static}}
+.f{display:grid;gap:6px}
+.f label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.f select,.f input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.f input[type=range]{width:100%;accent-color:var(--accent)}
+.rangeval{font-family:var(--mono);font-size:13px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.reset{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;justify-self:start;font-size:14px}
+
+.listhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.listhead h2{font-size:22px;font-weight:700}
+.listhead .count{color:var(--muted);font-size:14px}
+.sort{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--muted)}
+.sort select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+
+.rows{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;text-align:left;width:100%}
+.row:hover{border-color:var(--accent)}
+.badge{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:21px;font-stretch:85%;font-variant-numeric:tabular-nums}
+.s-good{background:var(--good-soft);color:var(--good)}
+.s-mid{background:var(--mid-soft);color:var(--mid)}
+.s-low{background:var(--low-soft);color:var(--low)}
+.rinfo{min-width:0;display:grid;gap:3px}
+.rtitle{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmeta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.chip.fin{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--mid-soft);color:var(--mid)}
+.rprice{text-align:right;display:grid;gap:2px}
+.rprice .p{font-family:var(--mono);font-weight:500;font-size:15px}
+.rprice .d{font-size:13px;color:var(--good);font-weight:600}
+.rprice .a{font-size:12px;color:var(--muted);text-decoration:line-through}
+@media (max-width:560px){.row{grid-template-columns:48px minmax(0,1fr)}.badge{width:48px;height:48px;font-size:18px}.rprice{grid-column:2;text-align:left;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}}
+.more{justify-self:center;margin-top:6px}
+.empty{padding:32px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+
+/* detalhe */
+.scrim{position:fixed;inset:0;background:color-mix(in srgb,var(--ink) 40%,transparent);z-index:20}
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:21;overflow-y:auto;border-left:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 18px) 20px calc(env(safe-area-inset-bottom,0px) + 28px);display:grid;gap:18px;align-content:start}
+.ptop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.close{border:1px solid var(--line);background:var(--bg);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:18px;flex:none}
+.panel h2{font-size:24px;line-height:1.15}
+.addr{color:var(--muted);font-size:14px;margin-top:4px}
+.scorebox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;background:var(--bg);border-radius:var(--r);padding:14px}
+.big{width:84px;height:84px;font-size:32px}
+.bars{display:grid;gap:9px}
+.bar{display:grid;gap:3px}
+.bar .t{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.bar .t span:last-child{font-family:var(--mono);color:var(--muted)}
+.track{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:99px}
+.bar .n{font-size:12px;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.fact{background:var(--surface);padding:10px 12px;display:grid;gap:2px}
+.fact .k{font-size:12px;color:var(--muted)}
+.fact .v{font-family:var(--mono);font-weight:500}
+.desc{font-size:14px;color:var(--muted);background:var(--bg);padding:10px 12px;border-radius:8px}
+.todo h3{font-size:17px;margin-bottom:8px}
+.todo ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.todo li{display:flex;gap:10px;font-size:14px}
+.todo li::before{content:"";flex:none;width:14px;height:14px;margin-top:3px;border:1.5px solid var(--muted);border-radius:3px}
+.pactions{display:flex;flex-wrap:wrap;gap:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:30;font-size:14px}
+.copyarea{width:100%;min-height:150px;font-family:var(--mono);font-size:12px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+
+.foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;display:grid;gap:6px;max-width:80ch}
+@media (prefers-reduced-motion:no-preference){.panel{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
+</style></head><body><script>window.RADAR_API = { url: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_imoveis?select=lote,fonte,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,visto_ultimo&ativo=eq.true&order=id", key: "sb_publishable_Ji31DC1ihqZTR7gmLeYTLw_GHgBjWN0" };</script>
+
+
+
+
+
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Imóveis retomados · Caixa e leilões de bancos</span>
+      <h1>Radar Retomados</h1>
+      <p>Reúne imóveis retomados à venda (leilões de Santander, Itaú, Bradesco e outros, mais a lista da Caixa), calcula um score de oportunidade para cada um e mostra primeiro o que merece análise.</p>
+    </div>
+    <div class="actions">
+      <label class="btn primary" for="file">Carregar lista da Caixa (.csv)</label>
+      <input type="file" id="file" accept=".csv,text/csv" hidden>
+      <a class="btn" href="https://venda-imoveis.caixa.gov.br/sistema/download-lista.asp" target="_blank" rel="noopener">Baixar lista no site da Caixa</a>
+      <a class="btn" href="convite.html">Quero testar</a>
+    </div>
+  </header>
+
+  <div id="msg"></div>
+
+  <section class="kpis" id="kpis" aria-label="Resumo"></section>
+
+  <div class="main">
+    <aside class="filters" aria-label="Filtros">
+      <div class="f"><label for="fUF">Estado</label><select id="fUF"></select></div>
+      <div class="f"><label for="fCidade">Cidade</label><select id="fCidade"></select></div>
+      <div class="f"><label for="fBanco">Vendedor</label><select id="fBanco"></select></div>
+      <div class="f"><label for="fTipo">Tipo</label><select id="fTipo"></select></div>
+      <div class="f"><label for="fModal">Modalidade</label><select id="fModal"></select></div>
+      <div class="f"><label for="fDesc">Desconto mínimo</label><input type="range" id="fDesc" min="0" max="80" step="5" value="0"><span class="rangeval" id="fDescV">0%</span></div>
+      <div class="f"><label for="fPreco">Preço máximo (R$)</label><input type="number" id="fPreco" min="0" step="10000" placeholder="Sem limite"></div>
+      <div class="f"><label for="fScore">Score mínimo</label><input type="range" id="fScore" min="0" max="90" step="5" value="0"><span class="rangeval" id="fScoreV">0</span></div>
+      <label class="check"><input type="checkbox" id="fOcup"> Só desocupados</label>
+      <label class="check"><input type="checkbox" id="fFin"> Só com financiamento (Caixa)</label>
+      <button class="reset" id="reset" type="button">Limpar filtros</button>
+    </aside>
+
+    <section aria-label="Oportunidades">
+      <div class="listhead">
+        <div><h2>Oportunidades</h2><span class="count" id="count"></span></div>
+        <label class="sort" for="sort">Ordenar por
+          <select id="sort">
+            <option value="score">Score</option>
+            <option value="desconto">Maior desconto</option>
+            <option value="preco">Menor preço</option>
+            <option value="lucro">Maior diferença p/ avaliação</option>
+          </select>
+        </label>
+      </div>
+      <div class="rows" id="rows"></div>
+      <button class="btn more" id="more" type="button" hidden>Mostrar mais</button>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <span><b>Como o score funciona:</b> desconto (até 40 pts: sobre a avaliação na Caixa, ou do último leilão sobre o 1º nas leiloeiras), preço do m² comparado à mediana do mesmo tipo de imóvel na cidade (25), financiamento na Caixa ou ocupação nos leilões (15), modalidade de venda (10) e liquidez do tipo de imóvel (10).</span>
+    <span>O score é um filtro para priorizar análise. Não substitui a leitura da matrícula, do edital e a verificação de ocupação e débitos.</span>
+  </footer>
+</div>
+
+<div id="detail" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// Radar de Imóveis — motor de leitura e pontuação da lista oficial da Caixa
+// Funções puras: rodam no navegador e no Node (para teste).
+
+function normKey(s) {
+  return String(s || "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function parseBRNumber(s) {
+  if (s == null) return NaN;
+  let t = String(s).trim().replace(/R\$\s?/i, "").replace(/\s/g, "");
+  if (!t) return NaN;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  return parseFloat(t);
+}
+
+function splitCSVLine(line, sep) {
+  const out = [];
+  let cur = "", q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q;
+    } else if (c === sep && !q) { out.push(cur); cur = ""; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out.map(v => v.trim());
+}
+
+const COLS = {
+  id: ["ndoimovel", "nimovel", "numerodoimovel", "imovel"],
+  uf: ["uf"],
+  cidade: ["cidade", "municipio"],
+  bairro: ["bairro"],
+  endereco: ["endereco"],
+  preco: ["preco", "valordevenda", "precodevenda"],
+  avaliacao: ["valordeavaliacao", "avaliacao"],
+  desconto: ["desconto"],
+  financiamento: ["financiamento"],
+  descricao: ["descricao"],
+  modalidade: ["modalidadedevenda", "modalidade"],
+  link: ["linkdeacesso", "link"]
+};
+
+function mapHeader(cells) {
+  const keys = cells.map(normKey);
+  const idx = {};
+  for (const [field, opts] of Object.entries(COLS)) {
+    let found = -1;
+    for (const o of opts) { found = keys.indexOf(o); if (found >= 0) break; }
+    if (found < 0) for (const o of opts) { found = keys.findIndex(k => k.startsWith(o)); if (found >= 0) break; }
+    idx[field] = found;
+  }
+  return idx;
+}
+
+function parseDescricao(d) {
+  const t = String(d || "");
+  const lower = normKey(t.split(",")[0]);
+  let tipo = "Outro";
+  if (lower.includes("apartamento")) tipo = "Apartamento";
+  else if (lower.includes("casa") || lower.includes("sobrado")) tipo = "Casa";
+  else if (lower.includes("terreno") || lower.includes("lote")) tipo = "Terreno";
+  else if (lower.includes("comercial") || lower.includes("loja") || lower.includes("sala") || lower.includes("galpao") || lower.includes("predio")) tipo = "Comercial";
+  else if (lower.includes("gleba") || lower.includes("rural") || lower.includes("chacara") || lower.includes("sitio") || lower.includes("fazenda")) tipo = "Rural";
+  const num = re => { const m = t.match(re); return m ? parseFloat(m[1].replace(",", ".")) : NaN; };
+  const priv = num(/([\d.,]+)\s*de\s*[áa]rea\s*privativa/i);
+  const total = num(/([\d.,]+)\s*de\s*[áa]rea\s*total/i);
+  const terreno = num(/([\d.,]+)\s*de\s*[áa]rea\s*do\s*terreno/i);
+  const quartos = num(/(\d+)\s*qto/i);
+  const vagas = num(/(\d+)\s*vaga/i);
+  let area = priv > 0 ? priv : (total > 0 ? total : (terreno > 0 ? terreno : NaN));
+  return { tipo, area, quartos: isNaN(quartos) ? null : quartos, vagas: isNaN(vagas) ? null : vagas };
+}
+
+function parseCaixaCSV(text) {
+  const lines = String(text).replace(/\r/g, "").split("\n");
+  let hi = -1, sep = ";";
+  for (let i = 0; i < Math.min(lines.length, 15); i++) {
+    const k = normKey(lines[i]);
+    if (k.includes("uf") && k.includes("cidade") && (k.includes("preco") || k.includes("avaliacao"))) {
+      hi = i; sep = (lines[i].split(";").length >= lines[i].split(",").length) ? ";" : ","; break;
+    }
+  }
+  if (hi < 0) throw new Error("Não encontrei o cabeçalho da lista. Confira se o arquivo é a lista de imóveis da Caixa (Lista_imoveis_UF.csv).");
+  const idx = mapHeader(splitCSVLine(lines[hi], sep));
+  if (idx.preco < 0 || idx.cidade < 0) throw new Error("O arquivo não tem as colunas de preço e cidade.");
+  const get = (c, f) => idx[f] >= 0 ? (c[idx[f]] || "") : "";
+  const rows = [];
+  for (let i = hi + 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const c = splitCSVLine(lines[i], sep);
+    const preco = parseBRNumber(get(c, "preco"));
+    if (!(preco > 0)) continue;
+    const avaliacao = parseBRNumber(get(c, "avaliacao"));
+    let desconto = parseBRNumber(get(c, "desconto"));
+    if (isNaN(desconto) && avaliacao > 0) desconto = (1 - preco / avaliacao) * 100;
+    const descricao = get(c, "descricao");
+    const d = parseDescricao(descricao);
+    const finTxt = normKey(get(c, "financiamento"));
+    let financiamento = null;
+    if (finTxt) financiamento = finTxt.startsWith("sim") || finTxt.includes("aceita");
+    rows.push({
+      id: get(c, "id").trim(), uf: get(c, "uf").toUpperCase(),
+      cidade: titleCase(get(c, "cidade")), bairro: titleCase(get(c, "bairro")),
+      endereco: get(c, "endereco"), preco, avaliacao: avaliacao > 0 ? avaliacao : null,
+      desconto: isNaN(desconto) ? null : Math.max(0, desconto),
+      financiamento, descricao, modalidade: get(c, "modalidade"),
+      link: get(c, "link"), ...d
+    });
+  }
+  return rows;
+}
+
+// Linha coletada de leiloeira (tabela radar_imoveis) -> formato do radar
+function fromLeilao(x) {
+  const pr = x.n_pracas === 1 ? "praça única" : (x.n_pracas ? x.n_pracas + " praças" : "");
+  return {
+    id: x.lote, fonte: x.fonte, uf: x.uf || "", cidade: x.cidade || "", bairro: x.bairro || "",
+    endereco: x.endereco || "", preco: +x.valor_atual, avaliacao: x.valor_2 && x.valor_1 ? +x.valor_1 : null,
+    refLabel: "Valor do 1º leilão", desconto: x.desconto_pct != null ? +x.desconto_pct : null,
+    financiamento: null, descricao: x.titulo, modalidade: [x.natureza, pr].filter(Boolean).join(", "),
+    link: x.link, tipo: x.tipo || "Outro", area: x.area_m2 ? +x.area_m2 : NaN, quartos: null, vagas: null,
+    comitente: x.comitente || null, ocupacao: x.ocupacao || null, dataLeilao: x.data_2 || x.data_1 || null,
+    inconsistente: !!x.inconsistente
+  };
+}
+
+function titleCase(s) {
+  const small = new Set(["de", "da", "do", "das", "dos", "e"]);
+  return String(s || "").trim().toLowerCase().split(/\s+/)
+    .map((w, i) => (i > 0 && small.has(w)) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function median(a) {
+  const s = a.filter(x => isFinite(x)).sort((x, y) => x - y);
+  if (!s.length) return NaN;
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function modalidadePeso(m) {
+  const k = normKey(m);
+  if (k.includes("vendadireta")) return { pts: 10, label: "Venda direta: compra imediata, sem disputa" };
+  if (k.includes("licitacao")) return { pts: 7, label: "Licitação aberta: proposta com prazo definido" };
+  if (k.includes("2leilao") || k.includes("segundoleilao")) return { pts: 8, label: "2º leilão: lance mínimo costuma ser menor" };
+  if (k.includes("leilao")) return { pts: 5, label: "Leilão: disputa com outros compradores" };
+  if (k.includes("extrajudicial")) return { pts: 8, label: "Extrajudicial (banco): processo mais rápido" };
+  if (k.includes("judicial")) return { pts: 6, label: "Judicial: checar o processo e possíveis recursos" };
+  return { pts: 4, label: "Modalidade não informada" };
+}
+
+// Score 0–100 com detalhamento. Pesos pensados para investidor que compra para revender ou alugar.
+function scoreAll(rows) {
+  const groups = {};
+  for (const r of rows) {
+    r.pm2 = (r.area > 10) ? r.preco / r.area : null;
+    const k = r.uf + "|" + r.cidade + "|" + r.tipo;
+    (groups[k] = groups[k] || []).push(r.pm2);
+  }
+  const med = {};
+  for (const k in groups) med[k] = median(groups[k]);
+  for (const r of rows) {
+    const parts = [];
+    const d = r.desconto ?? 0;
+    const pDesc = Math.min(40, (d / 60) * 40);
+    parts.push({ nome: r.fonte && r.fonte !== "caixa" ? "Desconto sobre o 1º leilão" : "Desconto sobre a avaliação", pts: pDesc, max: 40, nota: r.desconto == null ? (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado") : d.toFixed(1).replace(".", ",") + "% abaixo" });
+    const m = med[r.uf + "|" + r.cidade + "|" + r.tipo];
+    let pM2 = 10, notaM2 = "sem área para comparar";
+    if (r.pm2 && isFinite(m) && groups[r.uf + "|" + r.cidade + "|" + r.tipo].filter(x => x).length >= 3) {
+      const rel = r.pm2 / m;
+      pM2 = Math.max(0, Math.min(25, (1.4 - rel) / 0.8 * 25));
+      notaM2 = Math.round((1 - rel) * 100) + "% vs. mediana da cidade";
+      r.relM2 = rel;
+    }
+    parts.push({ nome: "Preço do m² na cidade", pts: pM2, max: 25, nota: notaM2 });
+    if (r.fonte && r.fonte !== "caixa") {
+      const pOc = r.ocupacao === "desocupado" ? 15 : 5;
+      parts.push({ nome: "Ocupação", pts: pOc, max: 15, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : "não informada: verificar no edital" });
+    } else {
+      const pFin = r.financiamento === true ? 15 : (r.financiamento === null ? 7 : 0);
+      parts.push({ nome: "Aceita financiamento", pts: pFin, max: 15, nota: r.financiamento === true ? "sim" : r.financiamento === false ? "não, só à vista" : "não informado" });
+    }
+    const mod = modalidadePeso(r.modalidade);
+    parts.push({ nome: "Modalidade de venda", pts: mod.pts, max: 10, nota: mod.label });
+    let pLiq = 4;
+    if (r.tipo === "Apartamento" || r.tipo === "Casa") pLiq = (r.quartos >= 2 ? 10 : 7);
+    else if (r.tipo === "Comercial") pLiq = 6;
+    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq, max: 10, nota: r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
+    r.parts = parts;
+    r.score = Math.round(parts.reduce((s, p) => s + p.pts, 0));
+    r.lucroBruto = r.avaliacao ? r.avaliacao - r.preco : null;
+  }
+  rows.sort((a, b) => b.score - a.score);
+  return rows;
+}
+
+if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV, scoreAll, parseBRNumber, parseDescricao, median };
+
+</script>
+<script>
+// Linhas de EXEMPLO no formato da lista da Caixa. Não são imóveis reais.
+const SAMPLE_CSV = [
+" Lista de Imóveis da Caixa (EXEMPLO)",
+" N° do imóvel;UF;Cidade;Bairro;Endereço;Preço;Valor de avaliação;Desconto;Financiamento;Descrição;Modalidade de venda;Link de acesso",
+"EXEMPLO-01;SP;CAMPINAS;JARDIM DO LAGO;RUA EXEMPLO, 120 APTO 31;168.400,00;305.000,00;44.79;Sim;Apartamento, 68.20 de área total, 52.10 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;",
+"EXEMPLO-02;SP;CAMPINAS;CAMBUÍ;AV EXEMPLO, 900 APTO 82;412.000,00;560.000,00;26.43;Sim;Apartamento, 98.00 de área total, 74.30 de área privativa, 0.00 de área do terreno, 3 qto(s), 2 vaga(s) de garagem.;Licitação Aberta;",
+"EXEMPLO-03;SP;CAMPINAS;VILA INDUSTRIAL;RUA EXEMPLO, 45;139.000,00;171.000,00;18.71;Não;Apartamento, 55.00 de área total, 44.00 de área privativa, 0.00 de área do terreno, 2 qto(s);Leilão SFI - Edital Único;",
+"EXEMPLO-04;SP;CAMPINAS;PARQUE ITAJAÍ;RUA EXEMPLO, 300;121.500,00;232.000,00;47.63;Sim;Apartamento, 49.00 de área total, 41.20 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;",
+"EXEMPLO-05;SP;CAMPINAS;BARÃO GERALDO;RUA EXEMPLO, 18;385.000,00;470.000,00;18.09;Sim;Casa, 180.00 de área total, 142.00 de área privativa, 250.00 de área do terreno, 3 qto(s), 2 vaga(s) de garagem.;Licitação Aberta;",
+"EXEMPLO-06;SP;SAO PAULO;ITAQUERA;RUA EXEMPLO, 77 APTO 12;176.300,00;268.000,00;34.22;Sim;Apartamento, 52.00 de área total, 43.50 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;",
+"EXEMPLO-07;SP;SAO PAULO;VILA MARIANA;RUA EXEMPLO, 1500 APTO 44;598.000,00;720.000,00;16.94;Sim;Apartamento, 92.00 de área total, 70.00 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;2º Leilão SFI;",
+"EXEMPLO-08;SP;SAO PAULO;GUAIANASES;RUA EXEMPLO, 210;98.600,00;189.000,00;47.83;Não;Apartamento, 46.00 de área total, 39.80 de área privativa, 0.00 de área do terreno, 2 qto(s);Venda Direta Online;",
+"EXEMPLO-09;SP;SAO PAULO;SANTANA;RUA EXEMPLO, 64 APTO 101;402.000,00;455.000,00;11.65;Sim;Apartamento, 78.00 de área total, 63.00 de área privativa, 0.00 de área do terreno, 3 qto(s), 1 vaga(s) de garagem.;Licitação Aberta;",
+"EXEMPLO-10;SP;SAO PAULO;CIDADE TIRADENTES;RUA EXEMPLO, 9;112.000,00;150.000,00;25.33;Sim;Apartamento, 48.00 de área total, 42.00 de área privativa, 0.00 de área do terreno, 2 qto(s);Leilão SFI - Edital Único;",
+"EXEMPLO-11;SP;SAO PAULO;MOOCA;RUA EXEMPLO, 330;690.000,00;1.050.000,00;34.29;Não;Comercial, 260.00 de área total, 210.00 de área privativa, 300.00 de área do terreno.;Licitação Aberta;",
+"EXEMPLO-12;SP;RIBEIRAO PRETO;JARDIM BOTÂNICO;RUA EXEMPLO, 55;254.000,00;398.000,00;36.18;Sim;Casa, 150.00 de área total, 118.00 de área privativa, 220.00 de área do terreno, 3 qto(s), 2 vaga(s) de garagem.;Venda Direta Online;",
+"EXEMPLO-13;SP;RIBEIRAO PRETO;IPIRANGA;RUA EXEMPLO, 840;131.000,00;164.000,00;20.12;Sim;Casa, 90.00 de área total, 70.00 de área privativa, 150.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Leilão SFI - Edital Único;",
+"EXEMPLO-14;SP;RIBEIRAO PRETO;VILA VIRGÍNIA;RUA EXEMPLO, 12;142.500,00;195.000,00;26.92;Sim;Casa, 100.00 de área total, 82.00 de área privativa, 160.00 de área do terreno, 2 qto(s), 2 vaga(s) de garagem.;Licitação Aberta;",
+"EXEMPLO-15;SP;SOROCABA;ÉDEN;RUA EXEMPLO, 400;74.000,00;95.000,00;22.11;Sim;Terreno, 0.00 de área total, 0.00 de área privativa, 250.00 de área do terreno.;Venda Direta Online;",
+"EXEMPLO-16;SP;SOROCABA;CAMPOLIM;RUA EXEMPLO, 1100 APTO 63;219.000,00;365.000,00;40.00;Sim;Apartamento, 72.00 de área total, 60.00 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;"
+].join("\n");
+
+</script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const brl = v => v == null || !isFinite(v) ? "–" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const pct = v => v == null || !isFinite(v) ? "–" : v.toFixed(1).replace(".", ",") + "%";
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const tier = s => s >= 70 ? "s-good" : s >= 50 ? "s-mid" : "s-low";
+
+  let ALL = [], source = { kind: "sample", label: "" }, shown = 30;
+  let LEILAO = [], CAIXA = [], leilaoInfo = null, apiFim = false;
+  const vendedor = r => r.fonte === "caixa" ? "Caixa" : (r.comitente || "Sem banco (judicial e outros)");
+  function rebuild() {
+    const rows = [...LEILAO, ...CAIXA];
+    if (!rows.length) { load(parseCaixaCSV(SAMPLE_CSV).map(r => ({ ...r, fonte: "caixa" })), { kind: "sample" }); return; }
+    const parts = [];
+    if (LEILAO.length) parts.push(`${LEILAO.length.toLocaleString("pt-BR")} de leilões (${leilaoInfo})`);
+    if (CAIXA.length) parts.push(`${CAIXA.length.toLocaleString("pt-BR")} da Caixa (${source.caixaFile || "arquivo enviado"})`);
+    load(rows.map(r => ({ ...r })), { kind: "file", label: parts.join(" + ") });
+  }
+  const STORE = "radar-retomados-filtros";
+
+  function load(rows, src) {
+    ALL = scoreAll(rows); source = src; shown = 30;
+    fillSelect($("fUF"), "Todos os estados", uniq(ALL.map(r => r.uf).filter(Boolean)));
+    fillCidades();
+    fillSelect($("fBanco"), "Todos os vendedores", uniq(ALL.map(vendedor)));
+    fillSelect($("fTipo"), "Todos os tipos", uniq(ALL.map(r => r.tipo)));
+    fillSelect($("fModal"), "Todas", uniq(ALL.map(r => r.modalidade).filter(Boolean)));
+    restoreFilters();
+    renderMsg(); render();
+  }
+  // cidades da UF escolhida (ou de todas); mantém a cidade se ela ainda existir na lista
+  function fillCidades() {
+    const uf = $("fUF").value, el = $("fCidade"), atual = el.value;
+    const base = uf ? ALL.filter(r => r.uf === uf) : ALL;
+    const opts = uniq(base.map(r => r.cidade + (multiUF() ? " / " + r.uf : "")));
+    fillSelect(el, uf ? `Todas as cidades de ${uf}` : "Todas as cidades", opts);
+    if (opts.includes(atual)) el.value = atual;
+  }
+  const multiUF = () => new Set(ALL.map(r => r.uf)).size > 1;
+  const uniq = a => [...new Set(a)].sort((x, y) => x.localeCompare(y, "pt-BR"));
+  function fillSelect(el, all, opts) {
+    el.innerHTML = `<option value="">${all}</option>` + opts.map(o => `<option>${esc(o)}</option>`).join("");
+  }
+
+  function renderMsg() {
+    const m = $("msg");
+    if (source.kind === "sample" && !apiFim) {
+      m.innerHTML = `<div class="notice"><span><strong>Carregando os imóveis dos leilões…</strong> Enquanto isso, veja os exemplos abaixo.</span></div>`;
+    } else if (source.kind === "sample") {
+      m.innerHTML = `<div class="notice"><span><strong>Dados de exemplo.</strong> Estes 16 imóveis são fictícios, só para mostrar como o radar funciona. Baixe a lista oficial do seu estado no site da Caixa e carregue o arquivo aqui (ou arraste para esta página). Nada sai do seu navegador.</span></div>`;
+    } else if (source.kind === "error") {
+      m.innerHTML = `<div class="notice error"><span><strong>Não consegui ler o arquivo.</strong> ${esc(source.label)}</span></div>`;
+    } else {
+      m.innerHTML = `<div class="source">Fontes: <b>${esc(source.label)}</b>. Para somar a Caixa, carregue o CSV oficial do seu estado.</div>`;
+    }
+  }
+
+  function filtered() {
+    const uf = $("fUF").value, c = $("fCidade").value, t = $("fTipo").value, mo = $("fModal").value, bn = $("fBanco").value, oc = $("fOcup").checked;
+    const d = +$("fDesc").value, p = +$("fPreco").value || Infinity, s = +$("fScore").value, f = $("fFin").checked;
+    let r = ALL.filter(x =>
+      (!uf || x.uf === uf) && (!c || (x.cidade + (multiUF() ? " / " + x.uf : "")) === c) && (!bn || vendedor(x) === bn) && (!oc || x.ocupacao === "desocupado") && (!t || x.tipo === t) && (!mo || x.modalidade === mo) &&
+      (x.desconto ?? 0) >= d && x.preco <= p && x.score >= s && (!f || x.financiamento === true));
+    const k = $("sort").value;
+    const by = {
+      score: (a, b) => b.score - a.score,
+      desconto: (a, b) => (b.desconto ?? 0) - (a.desconto ?? 0),
+      preco: (a, b) => a.preco - b.preco,
+      lucro: (a, b) => (b.lucroBruto ?? 0) - (a.lucroBruto ?? 0)
+    }[k];
+    return r.slice().sort(by);
+  }
+
+  function render() {
+    const r = filtered();
+    const base = r;
+    const descs = base.map(x => x.desconto).filter(x => x != null);
+    const fin = base.filter(x => x.financiamento === true).length;
+    const top = base.filter(x => x.score >= 70).length;
+    $("kpis").innerHTML = [
+      [base.length.toLocaleString("pt-BR"), "imóveis no filtro"],
+      [descs.length ? pct(descs.reduce((a, b) => a + b, 0) / descs.length) : "–", "desconto médio"],
+      [base.filter(x => x.ocupacao === "desocupado").length.toLocaleString("pt-BR"), "anunciados como desocupados"],
+      [top.toLocaleString("pt-BR"), "com score 70 ou mais"]
+    ].map(([v, l]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span></div>`).join("");
+    $("count").textContent = r.length === ALL.length ? `${r.length} de ${ALL.length}` : `${r.length} de ${ALL.length} após filtros`;
+    $("rows").innerHTML = r.length ? r.slice(0, shown).map(rowHTML).join("") :
+      `<div class="empty">Nenhum imóvel com esses filtros. Reduza o desconto mínimo ou o score mínimo.</div>`;
+    $("more").hidden = r.length <= shown;
+    $("fDescV").textContent = $("fDesc").value + "%";
+    $("fScoreV").textContent = $("fScore").value;
+    saveFilters();
+  }
+
+  function rowHTML(x) {
+    const i = ALL.indexOf(x);
+    const area = x.area ? Math.round(x.area) + " m²" : null;
+    const meta = [x.bairro, x.cidade + " / " + x.uf].filter(Boolean).join(" · ");
+    return `<button class="row" data-i="${i}" type="button">
+      <span class="badge ${tier(x.score)}" aria-label="Score ${x.score}">${x.score}</span>
+      <span class="rinfo">
+        <span class="rtitle">${esc(x.tipo)}${x.quartos ? `, ${x.quartos} quarto(s)` : ""}${area ? ` · ${area}` : ""}</span>
+        <span class="rmeta">${esc(meta)}</span>
+        <span class="chips"><span class="chip">${esc(vendedor(x))}</span>${x.ocupacao === "desocupado" ? '<span class="chip fin">Desocupado</span>' : ""}${x.financiamento ? '<span class="chip fin">Financiamento</span>' : ""}${x.dataLeilao ? `<span class="chip">Leilão ${fmtData(x.dataLeilao)}</span>` : ""}<span class="chip">${esc(shortMod(x.modalidade))}</span>${x.relM2 && x.relM2 < .85 ? `<span class="chip">m² ${Math.round((1 - x.relM2) * 100)}% abaixo</span>` : ""}</span>
+      </span>
+      <span class="rprice"><span class="p">${brl(x.preco)}</span>${x.desconto != null ? `<span class="d">−${pct(x.desconto)}</span>` : ""}${x.avaliacao ? `<span class="a">${brl(x.avaliacao)}</span>` : ""}</span>
+    </button>`;
+  }
+  const fmtData = d => { const t = new Date(d); return isNaN(t) ? "" : t.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }); };
+  const shortMod = m => (m || "Modalidade não informada").replace(/ - Edital Único/i, "");
+
+  function openDetail(x) {
+    const d = $("detail");
+    const link = x.link && /^https?:\/\//.test(x.link) ? x.link : null;
+    d.innerHTML = `<div class="scrim" data-close="1"></div>
+    <aside class="panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+      <div class="ptop"><div><span class="eyebrow">Imóvel ${esc(x.id || "")}</span>
+        <h2 id="dTitle">${esc(x.tipo)}${x.quartos ? `, ${x.quartos} quarto(s)` : ""} em ${esc(x.bairro || x.cidade)}</h2>
+        <div class="addr">${esc(x.endereco)} · ${esc(x.cidade)} / ${esc(x.uf)}</div></div>
+        <button class="close" data-close="1" type="button" aria-label="Fechar">×</button></div>
+      <div class="scorebox"><span class="badge big ${tier(x.score)}">${x.score}</span>
+        <div class="bars">${x.parts.map(p => `<div class="bar"><div class="t"><span>${p.nome}</span><span>${Math.round(p.pts)}/${p.max}</span></div>
+          <div class="track"><div class="fill" style="width:${(p.pts / p.max * 100).toFixed(0)}%"></div></div><span class="n">${esc(p.nota)}</span></div>`).join("")}</div></div>
+      <div class="facts">
+        <div class="fact"><span class="k">Preço de venda</span><span class="v">${brl(x.preco)}</span></div>
+        <div class="fact"><span class="k">${esc(x.refLabel || "Valor de avaliação")}</span><span class="v">${brl(x.avaliacao)}</span></div>
+        <div class="fact"><span class="k">Diferença bruta</span><span class="v">${brl(x.lucroBruto)}</span></div>
+        <div class="fact"><span class="k">Vendedor</span><span class="v">${esc(vendedor(x))}</span></div>
+        <div class="fact"><span class="k">Próximo leilão</span><span class="v">${x.dataLeilao ? new Date(x.dataLeilao).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }) : "–"}</span></div>
+        <div class="fact"><span class="k">Desconto</span><span class="v">${pct(x.desconto)}</span></div>
+        <div class="fact"><span class="k">Área considerada</span><span class="v">${x.area ? x.area.toLocaleString("pt-BR") + " m²" : "–"}</span></div>
+        <div class="fact"><span class="k">Preço por m²</span><span class="v">${brl(x.pm2)}</span></div>
+      </div>
+      <div class="desc">${esc(x.descricao)}<br>${esc(x.modalidade)}${x.inconsistente ? "<br><b>Atenção:</b> o último leilão tem valor mínimo acima do 1º. Isso acontece quando a dívida supera a avaliação. Confira no edital." : ""}</div>
+      <div class="todo"><h3>Antes de dar lance</h3><ul>
+        <li>Ler a matrícula atualizada: ônus, penhoras e averbações</li>
+        <li>Ler o edital: quem paga condomínio, IPTU e despesas de desocupação</li>
+        <li>Confirmar se o imóvel está ocupado e estimar prazo e custo de desocupação</li>
+        <li>Somar ITBI, registro, reforma e comissão ao preço para calcular o retorno real</li>
+        <li>Comparar com anúncios de imóveis parecidos no mesmo bairro</li></ul></div>
+      <div class="pactions">
+        ${link ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">${x.fonte === "caixa" ? "Abrir no site da Caixa" : "Abrir no site do leiloeiro"}</a>` : ""}
+        <button class="btn" type="button" id="copy">Copiar resumo para WhatsApp</button>
+      </div>
+    </aside>`;
+    d.hidden = false;
+    d.querySelector(".close").focus();
+    d.onclick = e => { if (e.target.dataset.close) closeDetail(); };
+    $("copy").onclick = () => copyText(summary(x), d.querySelector(".pactions"));
+  }
+  function closeDetail() { $("detail").hidden = true; $("detail").innerHTML = ""; }
+
+  function summary(x) {
+    return `*Oportunidade Radar Retomados (score ${x.score}/100)*
+${x.tipo}${x.quartos ? `, ${x.quartos} quarto(s)` : ""}${x.area ? `, ${Math.round(x.area)} m²` : ""}
+${x.bairro ? x.bairro + ", " : ""}${x.cidade}/${x.uf}
+Preço: ${brl(x.preco)} | ${x.refLabel || "Avaliação"}: ${brl(x.avaliacao)} | Desconto: ${pct(x.desconto)}
+Vendedor: ${vendedor(x)} | ${x.modalidade}${x.ocupacao === "desocupado" ? " | Desocupado" : ""}${x.fonte === "caixa" ? ` | Financiamento: ${x.financiamento ? "sim" : x.financiamento === false ? "não" : "não informado"}` : ""}
+${x.link || ""}`.trim();
+  }
+
+  function copyText(t, after) {
+    const fallback = () => {
+      if (after.querySelector("textarea")) return;
+      const ta = document.createElement("textarea");
+      ta.className = "copyarea"; ta.value = t; ta.readOnly = true;
+      after.after(ta); ta.focus(); ta.select();
+      toast("Selecione e copie o texto abaixo");
+    };
+    try {
+      navigator.clipboard.writeText(t).then(() => toast("Resumo copiado"), fallback);
+    } catch (e) { fallback(); }
+  }
+  function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2200); }
+
+  // arquivo
+  function readFile(f) {
+    const fr = new FileReader();
+    fr.onload = () => {
+      let text;
+      try { text = new TextDecoder("windows-1252").decode(fr.result); } catch (e) { text = new TextDecoder().decode(fr.result); }
+      if (text.includes("Ã")) text = new TextDecoder().decode(fr.result);
+      try {
+        const rows = parseCaixaCSV(text);
+        if (!rows.length) throw new Error("O arquivo foi lido, mas nenhuma linha tinha preço válido.");
+        CAIXA = rows.map(r => ({ ...r, fonte: "caixa" })); source.caixaFile = f.name; rebuild();
+      } catch (e) { source = { kind: "error", label: e.message }; renderMsg(); }
+    };
+    fr.readAsArrayBuffer(f);
+  }
+  $("file").addEventListener("change", e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ""; });
+  document.addEventListener("dragover", e => { e.preventDefault(); document.body.classList.add("dragging"); });
+  document.addEventListener("dragleave", () => document.body.classList.remove("dragging"));
+  document.addEventListener("drop", e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+
+  // filtros
+  $("fUF").addEventListener("input", fillCidades);
+  ["fUF", "fCidade", "fBanco", "fOcup", "fTipo", "fModal", "fDesc", "fPreco", "fScore", "fFin", "sort"].forEach(id =>
+    $(id).addEventListener("input", () => { shown = 30; render(); }));
+  $("reset").onclick = () => { $("fUF").value = $("fCidade").value = $("fBanco").value = $("fTipo").value = $("fModal").value = ""; fillCidades(); $("fOcup").checked = false; $("fDesc").value = 0; $("fPreco").value = ""; $("fScore").value = 0; $("fFin").checked = false; render(); };
+  $("more").onclick = () => { shown += 30; render(); };
+  $("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) openDetail(ALL[+b.dataset.i]); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("detail").hidden) closeDetail(); });
+
+  function saveFilters() {
+    try { localStorage.setItem(STORE, JSON.stringify({ d: $("fDesc").value, p: $("fPreco").value, s: $("fScore").value, f: $("fFin").checked, o: $("sort").value })); } catch (e) {}
+  }
+  function restoreFilters() {
+    try { const v = JSON.parse(localStorage.getItem(STORE) || "null"); if (!v) return;
+      $("fDesc").value = v.d; $("fPreco").value = v.p; $("fScore").value = v.s; $("fFin").checked = v.f; $("sort").value = v.o || "score"; } catch (e) {}
+  }
+
+  // início: dados publicados junto com a página, se existirem; senão, exemplo
+  // fonte de dados: um endereço de API (site publicado) ou o arquivo dados.json publicado junto
+  const API = window.RADAR_API || null;
+  rebuild();
+  async function lerAPI() {
+    const rows = [];
+    for (let off = 0; off < 20000; off += 1000) {
+      const r = await fetch(`${API.url}&limit=1000&offset=${off}`, { headers: { apikey: API.key } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const page = await r.json();
+      rows.push(...page);
+      if (page.length < 1000) break;
+    }
+    const ultimo = rows.reduce((m, x) => x.visto_ultimo > m ? x.visto_ultimo : m, "");
+    return { rows, gerado_em: ultimo };
+  }
+  // Dentro do app Claude: lê o banco pelo conector Supabase de quem está vendo
+  const SQL = "select coalesce(json_agg(t), '[]'::json) as rows from (select lote,fonte,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,visto_ultimo from public.radar_imoveis where ativo order by id) t";
+  const MSG_MCP = {
+    server_not_connected: "Conecte o Supabase em Configurações → Conectores do claude.ai para ver os imóveis coletados.",
+    needs_reauth: "A conexão com o Supabase expirou. Reconecte em Configurações → Conectores do claude.ai.",
+    not_in_manifest: "O acesso ao Supabase não foi permitido para esta página.",
+    approval_required: "Esta página precisa da sua permissão para consultar o Supabase.",
+    selection_required: "Escolha qual conexão do Supabase usar no aviso do app."
+  };
+  async function lerMCP() {
+    const mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null;
+    if (!mcp) return null;
+    const res = await mcp.callTool("Supabase", "execute_sql", { project_id: "ryhyvzwqtktaaonznizn", query: SQL });
+    let txt = res.payload;
+    if (txt && typeof txt === "object" && !Array.isArray(txt)) txt = txt.result ?? JSON.stringify(txt);
+    if (typeof txt !== "string") txt = JSON.stringify(txt);
+    const m = txt.match(/<untrusted-data-[^>]+>\s*(\[[\s\S]*\])\s*<\/untrusted-data/);
+    const arr = JSON.parse(m ? m[1] : txt);
+    const rows = (arr[0] && arr[0].rows) || [];
+    const ultimo = rows.reduce((mx, x) => x.visto_ultimo > mx ? x.visto_ultimo : mx, "");
+    return { rows, gerado_em: ultimo };
+  }
+  function erroMCP(e) {
+    const txt = MSG_MCP[e && e.code] || ("Não consegui consultar o banco agora" + (e && e.message ? ": " + e.message : "."));
+    $("msg").innerHTML = `<div class="notice"><span><strong>Imóveis dos leilões indisponíveis.</strong> ${esc(txt)} Por enquanto, veja os exemplos abaixo.</span><button class="btn" type="button" id="retry">Tentar de novo</button></div>`;
+    $("retry").onclick = () => { $("msg").innerHTML = `<div class="notice"><span><strong>Carregando os imóveis dos leilões…</strong></span></div>`; iniciar(); };
+  }
+  function iniciar() {
+    const carregar = API ? lerAPI().catch(() => fetch("dados.json").then(r => r.json()))
+      : fetch("dados.json").then(r => r.ok ? r.json() : Promise.reject()).then(j => (j && j.rows && j.rows.length) ? j : Promise.reject()).catch(() => lerMCP());
+    carregar.then(j => {
+      apiFim = true;
+      if (!j) { renderMsg(); return; }
+      LEILAO = j.rows.map(fromLeilao);
+      const d = new Date(j.gerado_em);
+      leilaoInfo = "Mega Leilões, atualizado em " + (isNaN(d) ? "–" : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }));
+      rebuild();
+    }).catch(e => { apiFim = true; erroMCP(e); });
+  }
+  iniciar();
+})();
+
+</script>
+</body></html>
