@@ -1,0 +1,741 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style><meta name="description" content="Fazendas, sítios e glebas de leilão e bancos, com preço por hectare comparado ao VTN da Receita Federal."><title>Radar Rural</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><style>
+/* Layout: barra de ferramentas + resumo; abaixo, filtros à esquerda e ranking à direita; detalhe em painel lateral (tela cheia no celular) */
+:root{
+  --bg:#F2F4F3; --surface:#FFFFFF; --sunk:#E8ECEA; --ink:#14201C; --muted:#5A6A65; --line:#D5DDDA;
+  --accent:#2446B8; --accent-ink:#FFFFFF; --accent-soft:#E3E8FA;
+  --good:#16794F; --good-soft:#DDF1E7; --mid:#A86B00; --mid-soft:#FBEFD6; --low:#6B7672; --low-soft:#E6EAE8;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1513; --surface:#151F1C; --sunk:#1B2724; --ink:#E5EDEA; --muted:#94A49F; --line:#2A3834;
+  --accent:#8EA6FF; --accent-ink:#0E1513; --accent-soft:#1F2A4D;
+  --good:#5DD39E; --good-soft:#143428; --mid:#F2B84B; --mid-soft:#3A2D12; --low:#94A49F; --low-soft:#232E2B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1513; --surface:#151F1C; --sunk:#1B2724; --ink:#E5EDEA; --muted:#94A49F; --line:#2A3834;
+  --accent:#8EA6FF; --accent-ink:#0E1513; --accent-soft:#1F2A4D;
+  --good:#5DD39E; --good-soft:#143428; --mid:#F2B84B; --mid-soft:#3A2D12; --low:#94A49F; --low-soft:#232E2B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:18px}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--display);font-stretch:85%;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* topo */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
+.brand h1{font-size:clamp(28px,4.4vw,40px);font-weight:800;line-height:1}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:500;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.source{font-size:13px;color:var(--muted)}
+.source b{color:var(--ink);font-weight:600}
+
+.notice{display:flex;gap:10px;align-items:flex-start;background:var(--mid-soft);border:1px solid color-mix(in srgb,var(--mid) 35%,transparent);padding:10px 14px;border-radius:var(--r);font-size:14px}
+.notice strong{color:var(--mid)}
+.error{background:var(--low-soft);border-color:var(--line)}
+.drop{border:1.5px dashed var(--accent);background:var(--accent-soft)}
+
+/* resumo */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.kpi{padding:14px 16px;border-left:1px solid var(--line);display:grid;gap:2px}
+.kpi:first-child{border-left:0}
+.kpi .v{font-family:var(--display);font-size:30px;font-weight:700;font-stretch:90%;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .l{font-size:13px;color:var(--muted)}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}}
+
+/* corpo */
+.main{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.filters{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){.filters{position:static}}
+.f{display:grid;gap:6px}
+.f label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.f select,.f input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.f input[type=range]{width:100%;accent-color:var(--accent)}
+.rangeval{font-family:var(--mono);font-size:13px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.reset{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;justify-self:start;font-size:14px}
+
+.listhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.listhead h2{font-size:22px;font-weight:700}
+.listhead .count{color:var(--muted);font-size:14px}
+.sort{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--muted)}
+.sort select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+
+.rows{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;cursor:pointer;text-align:left;width:100%}
+.row:hover{border-color:var(--accent)}
+.badge{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:21px;font-stretch:85%;font-variant-numeric:tabular-nums}
+.s-good{background:var(--good-soft);color:var(--good)}
+.s-mid{background:var(--mid-soft);color:var(--mid)}
+.s-low{background:var(--low-soft);color:var(--low)}
+.rinfo{min-width:0;display:grid;gap:3px}
+.rtitle{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmeta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.chip.fin{background:var(--good-soft);color:var(--good)}
+.chip.warn{background:var(--mid-soft);color:var(--mid)}
+.rprice{text-align:right;display:grid;gap:2px}
+.rprice .p{font-family:var(--mono);font-weight:500;font-size:15px}
+.rprice .d{font-size:13px;color:var(--good);font-weight:600}
+.rprice .a{font-size:12px;color:var(--muted);text-decoration:line-through}
+@media (max-width:560px){.row{grid-template-columns:48px minmax(0,1fr)}.badge{width:48px;height:48px;font-size:18px}.rprice{grid-column:2;text-align:left;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}}
+.more{justify-self:center;margin-top:6px}
+.empty{padding:32px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+
+/* detalhe */
+.scrim{position:fixed;inset:0;background:color-mix(in srgb,var(--ink) 40%,transparent);z-index:20}
+.panel{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:21;overflow-y:auto;border-left:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 18px) 20px calc(env(safe-area-inset-bottom,0px) + 28px);display:grid;gap:18px;align-content:start}
+.ptop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.close{border:1px solid var(--line);background:var(--bg);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:18px;flex:none}
+.panel h2{font-size:24px;line-height:1.15}
+.addr{color:var(--muted);font-size:14px;margin-top:4px}
+.scorebox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;background:var(--bg);border-radius:var(--r);padding:14px}
+.big{width:84px;height:84px;font-size:32px}
+.bars{display:grid;gap:9px}
+.bar{display:grid;gap:3px}
+.bar .t{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.bar .t span:last-child{font-family:var(--mono);color:var(--muted)}
+.track{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:99px}
+.bar .n{font-size:12px;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.fact{background:var(--surface);padding:10px 12px;display:grid;gap:2px}
+.fact .k{font-size:12px;color:var(--muted)}
+.fact .v{font-family:var(--mono);font-weight:500}
+.desc{font-size:14px;color:var(--muted);background:var(--bg);padding:10px 12px;border-radius:8px}
+.todo h3{font-size:17px;margin-bottom:8px}
+.todo ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.todo li{display:flex;gap:10px;font-size:14px}
+.todo li::before{content:"";flex:none;width:14px;height:14px;margin-top:3px;border:1.5px solid var(--muted);border-radius:3px}
+.pactions{display:flex;flex-wrap:wrap;gap:8px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:30;font-size:14px}
+.copyarea{width:100%;min-height:150px;font-family:var(--mono);font-size:12px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+
+.paises{display:flex;flex-wrap:wrap;gap:8px}
+.pais{display:inline-flex;align-items:center;gap:10px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;color:var(--ink)}
+.pais small{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--muted)}
+.pais[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.pais:hover{border-color:var(--accent)}
+@media (max-width:600px){.pais{padding:8px 12px;font-size:14px;gap:8px}}
+.fx{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.conv{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.prox{font-size:13px;color:var(--good);font-weight:600}
+.alerta{font-size:13px;background:var(--mid-soft);color:var(--ink);padding:8px 10px;border-radius:8px}
+.foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;display:grid;gap:6px;max-width:80ch}
+@media (prefers-reduced-motion:no-preference){.panel{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
+
+.vtnbox{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;background:var(--surface);margin:12px 0}
+.vtnbox h3{margin:0 0 8px;font-size:15px}
+.vtnbox table{width:100%;border-collapse:collapse;font-size:14px}
+.vtnbox td{padding:4px 0;border-bottom:1px solid var(--line)}
+.vtnbox td:last-child{text-align:right;font-family:var(--mono)}
+.vtnbox .ref td{font-weight:600}
+.vtnbox small{display:block;color:var(--muted);margin-top:8px;font-size:12.5px;line-height:1.4}
+.ha{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.topnav{display:flex;gap:8px;flex-wrap:wrap}
+</style></head><body><script>window.RADAR_API = { url: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_rural_v?select=*&order=lote", key: "sb_publishable_Ji31DC1ihqZTR7gmLeYTLw_GHgBjWN0" };</script><div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Fazendas, sítios e glebas de leilão e bancos</span>
+      <h1>Radar Rural</h1>
+      <p>Reúne imóveis rurais à venda em leilões e por bancos, calcula o preço por hectare e compara com o Valor da Terra Nua (VTN) que a Receita Federal publica para cada município. A nota de 0 a 100 mostra primeiro o que merece análise.</p>
+    </div>
+    <div class="actions topnav">
+      <a class="btn" href="./">Radar urbano</a>
+      <a class="btn primary" href="convite.html">Quero testar</a>
+    </div>
+  </header>
+
+  <div id="msg"></div>
+  <section class="kpis" id="kpis" aria-label="Resumo"></section>
+
+  <div class="main">
+    <aside class="filters" aria-label="Filtros">
+      <div class="f"><label for="fUF">Estado</label><select id="fUF"></select></div>
+      <div class="f"><label for="fCidade">Município</label><select id="fCidade"></select></div>
+      <div class="f"><label for="fBanco">Vendedor</label><select id="fBanco"></select></div>
+      <div class="f"><label for="fHa">Área mínima</label><select id="fHa">
+        <option value="0">Qualquer área</option><option value="5">5 ha ou mais</option><option value="20">20 ha ou mais</option>
+        <option value="100">100 ha ou mais</option><option value="500">500 ha ou mais</option></select></div>
+      <div class="f"><label for="fVtn">Preço por hectare</label><select id="fVtn">
+        <option value="">Qualquer</option><option value="1">Até o VTN</option><option value="1.5">Até 1,5x o VTN</option><option value="2">Até 2x o VTN</option></select></div>
+      <div class="f"><label for="fDesc">Desconto mínimo</label><input type="range" id="fDesc" min="0" max="80" step="5" value="0"><span class="rangeval" id="fDescV">0%</span></div>
+      <div class="f"><label for="fPreco">Preço máximo (R$)</label><input type="number" id="fPreco" min="0" step="50000" placeholder="Sem limite"></div>
+      <div class="f"><label for="fScore">Score mínimo</label><input type="range" id="fScore" min="0" max="90" step="5" value="0"><span class="rangeval" id="fScoreV">0</span></div>
+      <label class="check"><input type="checkbox" id="fOcup"> Só desocupados</label>
+      <label class="check"><input type="checkbox" id="fInteiro"> Só imóvel inteiro (sem fração)</label>
+      <button class="reset" id="reset" type="button">Limpar filtros</button>
+    </aside>
+
+    <section aria-label="Oportunidades">
+      <div class="listhead">
+        <div><h2>Oportunidades rurais</h2><span class="count" id="count"></span></div>
+        <label class="sort" for="sort">Ordenar por
+          <select id="sort">
+            <option value="score">Score</option>
+            <option value="vtn">Menor preço x VTN</option>
+            <option value="ha">Maior área</option>
+            <option value="precoHa">Menor preço por hectare</option>
+            <option value="desconto">Maior desconto</option>
+            <option value="preco">Menor preço</option>
+          </select>
+        </label>
+      </div>
+      <div class="rows" id="rows"></div>
+      <button class="btn more" id="more" type="button" hidden>Mostrar mais</button>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <span><b>Como o score funciona:</b> preço por hectare comparado ao VTN do município (até 35 pts), desconto sobre a avaliação (25), escala da área (15), ocupação (10), modalidade de venda (10) e imóvel inteiro em vez de fração (5).</span>
+    <span><b>VTN:</b> Valor da Terra Nua 2026 publicado pela Receita Federal para o ITR, por município e aptidão agrícola, em R$ por hectare. Ele mede só a terra (sem benfeitorias) e costuma ficar abaixo do preço de mercado, então serve como piso de referência, não como avaliação.</span>
+    <span><b>Fontes dos imóveis:</b> Mega Leilões, Zuk, Superbid/Sold e Resale, coletadas todo dia de manhã. A área vem do anúncio; confira sempre na matrícula e no georreferenciamento (SIGEF).</span>
+    <span>O score é um filtro para priorizar análise. Não substitui a matrícula, o CAR, o CCIR, a certidão do ITR e a orientação de um advogado agrarista.</span>
+  </footer>
+</div>
+
+<div id="detail" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// Radar de Imóveis — motor de leitura e pontuação da lista oficial da Caixa
+// Funções puras: rodam no navegador e no Node (para teste).
+
+function normKey(s) {
+  return String(s || "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function parseBRNumber(s) {
+  if (s == null) return NaN;
+  let t = String(s).trim().replace(/R\$\s?/i, "").replace(/\s/g, "");
+  if (!t) return NaN;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  return parseFloat(t);
+}
+
+function splitCSVLine(line, sep) {
+  const out = [];
+  let cur = "", q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q;
+    } else if (c === sep && !q) { out.push(cur); cur = ""; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out.map(v => v.trim());
+}
+
+const COLS = {
+  id: ["ndoimovel", "nimovel", "numerodoimovel", "imovel"],
+  uf: ["uf"],
+  cidade: ["cidade", "municipio"],
+  bairro: ["bairro"],
+  endereco: ["endereco"],
+  preco: ["preco", "valordevenda", "precodevenda"],
+  avaliacao: ["valordeavaliacao", "avaliacao"],
+  desconto: ["desconto"],
+  financiamento: ["financiamento"],
+  descricao: ["descricao"],
+  modalidade: ["modalidadedevenda", "modalidade"],
+  link: ["linkdeacesso", "link"]
+};
+
+function mapHeader(cells) {
+  const keys = cells.map(normKey);
+  const idx = {};
+  for (const [field, opts] of Object.entries(COLS)) {
+    let found = -1;
+    for (const o of opts) { found = keys.indexOf(o); if (found >= 0) break; }
+    if (found < 0) for (const o of opts) { found = keys.findIndex(k => k.startsWith(o)); if (found >= 0) break; }
+    idx[field] = found;
+  }
+  return idx;
+}
+
+function parseDescricao(d) {
+  const t = String(d || "");
+  const lower = normKey(t.split(",")[0]);
+  let tipo = "Outro";
+  if (lower.includes("apartamento")) tipo = "Apartamento";
+  else if (lower.includes("casa") || lower.includes("sobrado")) tipo = "Casa";
+  else if (lower.includes("terreno") || lower.includes("lote")) tipo = "Terreno";
+  else if (lower.includes("comercial") || lower.includes("loja") || lower.includes("sala") || lower.includes("galpao") || lower.includes("predio")) tipo = "Comercial";
+  else if (lower.includes("gleba") || lower.includes("rural") || lower.includes("chacara") || lower.includes("sitio") || lower.includes("fazenda")) tipo = "Rural";
+  const num = re => { const m = t.match(re); return m ? parseFloat(m[1].replace(",", ".")) : NaN; };
+  const priv = num(/([\d.,]+)\s*de\s*[áa]rea\s*privativa/i);
+  const total = num(/([\d.,]+)\s*de\s*[áa]rea\s*total/i);
+  const terreno = num(/([\d.,]+)\s*de\s*[áa]rea\s*do\s*terreno/i);
+  const quartos = num(/(\d+)\s*qto/i);
+  const vagas = num(/(\d+)\s*vaga/i);
+  let area = priv > 0 ? priv : (total > 0 ? total : (terreno > 0 ? terreno : NaN));
+  return { tipo, area, quartos: isNaN(quartos) ? null : quartos, vagas: isNaN(vagas) ? null : vagas };
+}
+
+function parseCaixaCSV(text) {
+  const lines = String(text).replace(/\r/g, "").split("\n");
+  let hi = -1, sep = ";";
+  for (let i = 0; i < Math.min(lines.length, 15); i++) {
+    const k = normKey(lines[i]);
+    if (k.includes("uf") && k.includes("cidade") && (k.includes("preco") || k.includes("avaliacao"))) {
+      hi = i; sep = (lines[i].split(";").length >= lines[i].split(",").length) ? ";" : ","; break;
+    }
+  }
+  if (hi < 0) throw new Error("Não encontrei o cabeçalho da lista. Confira se o arquivo é a lista de imóveis da Caixa (Lista_imoveis_UF.csv).");
+  const idx = mapHeader(splitCSVLine(lines[hi], sep));
+  if (idx.preco < 0 || idx.cidade < 0) throw new Error("O arquivo não tem as colunas de preço e cidade.");
+  const get = (c, f) => idx[f] >= 0 ? (c[idx[f]] || "") : "";
+  const rows = [];
+  for (let i = hi + 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const c = splitCSVLine(lines[i], sep);
+    const preco = parseBRNumber(get(c, "preco"));
+    if (!(preco > 0)) continue;
+    const avaliacao = parseBRNumber(get(c, "avaliacao"));
+    let desconto = parseBRNumber(get(c, "desconto"));
+    if (isNaN(desconto) && avaliacao > 0) desconto = (1 - preco / avaliacao) * 100;
+    const descricao = get(c, "descricao");
+    const d = parseDescricao(descricao);
+    const finTxt = normKey(get(c, "financiamento"));
+    let financiamento = null;
+    if (finTxt) financiamento = finTxt.startsWith("sim") || finTxt.includes("aceita");
+    rows.push({
+      id: get(c, "id").trim(), uf: get(c, "uf").toUpperCase(),
+      cidade: titleCase(get(c, "cidade")), bairro: titleCase(get(c, "bairro")),
+      endereco: get(c, "endereco"), preco, avaliacao: avaliacao > 0 ? avaliacao : null,
+      desconto: isNaN(desconto) ? null : Math.max(0, desconto),
+      financiamento, descricao, modalidade: get(c, "modalidade"),
+      link: get(c, "link"), ...d
+    });
+  }
+  return rows;
+}
+
+// Linha coletada de leiloeira (tabela radar_imoveis) -> formato do radar
+function fromLeilao(x) {
+  const pr = x.n_pracas === 1 ? "praça única" : (x.n_pracas ? x.n_pracas + " praças" : "");
+  const v1 = x.valor_1 != null ? +x.valor_1 : null, v2 = x.valor_2 != null ? +x.valor_2 : null, va = +x.valor_atual;
+  const LABEL = { mega: "Valor do 1º leilão", hubzu: "Preço de lista", leilosoc: "Valor base", zuk: v2 ? "Valor do 1º leilão" : "Valor de avaliação", resale: "Valor de avaliação", superbid: "Valor de avaliação", ontario: "Valor venal (assessment)", macal: "Avaliação (não publicada)", ciudad: "Avaliação (não publicada)" };
+  const PRECO = { mega: "Lance mínimo atual", hubzu: "Lance atual", leilosoc: v2 ? "Valor mínimo de venda" : "Lance inicial", zuk: "Lance mínimo atual", resale: "Preço de venda", superbid: "Lance inicial / preço", ontario: "Proposta mínima", macal: "Lance mínimo", ciudad: "Base do leilão" };
+  // Mega: 1º leilão ainda não aconteceu -> preço atual é o do 1º; o desconto só vale no 2º
+  let proximo = null;
+  if ((x.fonte === "mega" || x.fonte === "zuk") && v1 && v2 && v2 < v1 && va >= v1 * 0.999) proximo = { valor: v2, data: x.data_2 || null };
+  return {
+    id: x.lote, fonte: x.fonte, pais: x.pais || "BR", moeda: x.moeda || "BRL",
+    uf: x.uf || "", cidade: x.cidade || "", bairro: x.bairro || "",
+    endereco: x.endereco || "", preco: va, avaliacao: (x.fonte === "mega" ? (v2 && v1) : v1) ? v1 : null,
+    refLabel: LABEL[x.fonte] || "Valor de referência", precoLabel: PRECO[x.fonte] || "Preço",
+    desconto: x.desconto_pct != null ? +x.desconto_pct : null, proximo,
+    financiamento: null, descricao: x.titulo, modalidade: [x.natureza, x.fonte === "mega" || x.fonte === "zuk" ? pr : ""].filter(Boolean).join(", "),
+    link: x.link, tipo: x.tipo || "Outro", area: x.area_m2 ? +x.area_m2 : NaN,
+    quartos: x.quartos != null ? +x.quartos : null, vagas: null, fracao: !!x.fracao,
+    comitente: x.comitente || null, ocupacao: x.ocupacao || null,
+    dataLeilao: proximo && x.data_1 ? x.data_1 : (x.data_2 || x.data_1 || null),
+    inconsistente: !!x.inconsistente
+  };
+}
+
+function titleCase(s) {
+  const small = new Set(["de", "da", "do", "das", "dos", "e"]);
+  return String(s || "").trim().toLowerCase().split(/\s+/)
+    .map((w, i) => (i > 0 && small.has(w)) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+function median(a) {
+  const s = a.filter(x => isFinite(x)).sort((x, y) => x - y);
+  if (!s.length) return NaN;
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function modalidadePeso(m) {
+  const k = normKey(m);
+  if (k.includes("taxsale")) return { pts: 7, label: "Venda por impostos: proposta fechada, mínimo é a dívida" };
+  if (k.includes("vendadireta")) return { pts: 10, label: "Venda direta: compra imediata, sem disputa" };
+  if (k.includes("licitacao")) return { pts: 7, label: "Licitação aberta: proposta com prazo definido" };
+  if (k.includes("2leilao") || k.includes("segundoleilao")) return { pts: 8, label: "2º leilão: lance mínimo costuma ser menor" };
+  if (k.includes("leilao")) return { pts: 5, label: "Leilão: disputa com outros compradores" };
+  if (k.includes("extrajudicial")) return { pts: 8, label: "Extrajudicial (banco): processo mais rápido" };
+  if (k.includes("judicial")) return { pts: 6, label: "Judicial: checar o processo e possíveis recursos" };
+  return { pts: 4, label: "Modalidade não informada" };
+}
+
+// Score 0–100 com detalhamento. Pesos pensados para investidor que compra para revender ou alugar.
+function scoreAll(rows) {
+  const groups = {};
+  for (const r of rows) {
+    r.pm2 = (r.area > 10) ? r.preco / r.area : null;
+    const k = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
+    (groups[k] = groups[k] || []).push(r.pm2);
+  }
+  const med = {};
+  for (const k in groups) med[k] = median(groups[k]);
+  for (const r of rows) {
+    const parts = [];
+    const d = r.desconto ?? 0;
+    const pDesc = Math.min(40, (d / 60) * 40);
+    const NOME_D = { caixa: "Desconto sobre a avaliação", resale: "Desconto sobre a avaliação", superbid: "Desconto sobre a avaliação", ontario: "Desconto sobre o valor venal", hubzu: "Desconto sobre o preço de lista", leilosoc: "Desconto sobre o valor base", macal: "Desconto sobre a avaliação", ciudad: "Desconto sobre a avaliação" };
+    const SEM_D = { superbid: "avaliação não informada no anúncio", resale: "avaliação não informada", macal: "a leiloeira não publica avaliação", ciudad: "o banco não publica avaliação", ontario: "sem valor venal, ou mínimo acima dele" };
+    parts.push({ nome: NOME_D[r.fonte || "caixa"] || "Desconto sobre o 1º leilão", pts: pDesc, max: 40, nota: r.desconto == null ? (SEM_D[r.fonte] || (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado")) : d.toFixed(1).replace(".", ",") + "% abaixo" });
+    const gk = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
+    const m = med[gk];
+    let pM2 = 10, notaM2 = "sem área para comparar";
+    if (r.pm2 && isFinite(m) && groups[gk].filter(x => x).length >= 3) {
+      const rel = r.pm2 / m;
+      pM2 = Math.max(0, Math.min(25, (1.4 - rel) / 0.8 * 25));
+      notaM2 = Math.round((1 - rel) * 100) + "% vs. mediana da cidade";
+      r.relM2 = rel;
+    }
+    parts.push({ nome: "Preço do m² na cidade", pts: pM2, max: 25, nota: notaM2 });
+    if (r.fonte && r.fonte !== "caixa") {
+      const pOc = r.ocupacao === "desocupado" ? 15 : (r.ocupacao === "ocupado" ? 0 : 5);
+      parts.push({ nome: "Ocupação", pts: pOc, max: 15, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : (r.ocupacao === "ocupado" ? "anunciado como ocupado" : "não informada: verificar no edital") });
+    } else {
+      const pFin = r.financiamento === true ? 15 : (r.financiamento === null ? 7 : 0);
+      parts.push({ nome: "Aceita financiamento", pts: pFin, max: 15, nota: r.financiamento === true ? "sim" : r.financiamento === false ? "não, só à vista" : "não informado" });
+    }
+    const mod = modalidadePeso(r.modalidade);
+    parts.push({ nome: "Modalidade de venda", pts: mod.pts, max: 10, nota: mod.label });
+    let pLiq = 4;
+    if (r.tipo === "Apartamento" || r.tipo === "Casa") pLiq = (r.quartos >= 2 ? 10 : 7);
+    else if (r.tipo === "Comercial") pLiq = 6;
+    if (r.fracao) pLiq = 1;
+    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq, max: 10, nota: r.fracao ? "só uma fração do imóvel está à venda" : r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
+    r.parts = parts;
+    r.score = Math.round(parts.reduce((s, p) => s + p.pts, 0));
+    r.lucroBruto = r.avaliacao ? r.avaliacao - r.preco : null;
+  }
+  rows.sort((a, b) => b.score - a.score);
+  return rows;
+}
+
+if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV, scoreAll, parseBRNumber, parseDescricao, median };
+
+</script>
+<script>
+// Radar Rural: hectares, preço por hectare, comparação com o VTN da Receita e nota 0–100.
+const ALQ_MINEIRO = new Set(["MG", "GO", "RJ", "ES", "BA", "TO", "DF"]); // alqueire de 4,84 ha; nos demais, paulista (2,42 ha)
+const numBR = s => {
+  s = String(s).trim();
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return parseFloat(s.replace(/\./g, "").replace(",", "."));
+  if (/^\d+,\d+$/.test(s)) return parseFloat(s.replace(",", "."));
+  if (/^\d+\.\d{1,2}$/.test(s)) return parseFloat(s);
+  return parseFloat(s.replace(/\./g, "").replace(",", "."));
+};
+const normMun = s => String(s || "").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Z0-9]+/g, " ").trim();
+
+function fracaoDe(t) {
+  const m = String(t || "").match(/(?:parte ideal|fra[cç][aã]o ideal|correspondente a)[^%]{0,40}?(\d{1,3}(?:[.,]\d+)?)\s*%/i) || String(t || "").match(/(\d{1,3}(?:[.,]\d+)?)\s*%\s*(?:de|do|da|sobre)\b/i);
+  if (!m) return null;
+  const p = parseFloat(m[1].replace(",", "."));
+  return p > 0 && p < 100 ? p / 100 : null;
+}
+
+function hectaresDe(x) {
+  const r = hectaresTotal(x);
+  const f = fracaoDe(x.titulo);
+  if (r.ha && f) return { ha: r.ha * f, origem: r.origem + `, fração de ${Math.round(f * 1000) / 10}%`, fracao: f };
+  return r;
+}
+
+function hectaresTotal(x) {
+  const t = String(x.titulo || "");
+  let m = t.match(/(\d[\d.,]*)\s*(?:ha\b|hectares?|hec\b)/i);
+  if (m) { const v = numBR(m[1]); if (v > 0) return { ha: v, origem: "anúncio (ha)" }; }
+  m = t.match(/(\d[\d.,]*)\s*alqueires?/i);
+  if (m) { const v = numBR(m[1]); if (v > 0) return { ha: v * (ALQ_MINEIRO.has(x.uf) ? 4.84 : 2.42), origem: "anúncio (alqueires)" }; }
+  const a = x.area_m2 != null ? +x.area_m2 : null;
+  if (a) {
+    // a Resale informa área de imóveis rurais em hectares
+    if (x.fonte === "resale" && a < 100 && !/residencial|comercial/i.test(t) && (/, rural,/i.test(t) || /rural|ch[aá]cara|s[ií]tio|fazenda/i.test(x.categoria || ""))) return { ha: a, origem: "anúncio (ha)" };
+    return { ha: a / 10000, origem: "anúncio (m²)" };
+  }
+  m = t.match(/(\d[\d.,]*)\s*m(?:²|2)(?![a-z])/i);
+  if (m) { const v = numBR(m[1]); if (v > 0) return { ha: v / 10000, origem: "anúncio (m²)" }; }
+  return { ha: null, origem: null };
+}
+
+function ehRural(x, ha) {
+  const t = (x.titulo || "") + " " + (x.categoria || "");
+  if (/apartamento|loteamento|condom[ií]nio|residencial,/i.test(t) && !/im[oó]vel rural|zona rural|, rural,/i.test(t)) return false;
+  if ((x.tipo === "Apartamento" || x.tipo === "Casa") && !/im[oó]vel rural|zona rural|fazenda|s[ií]tio/i.test(t)) return false;
+  if (ha != null && ha < 0.5) return false; // chácara de recreio / lote urbano
+  return true;
+}
+
+function vtnDe(x, VTN) {
+  const k = (x.uf || "") + "|" + normMun(x.cidade);
+  const v = VTN && VTN.dados ? VTN.dados[k] : null;
+  if (!v) return null;
+  const nums = v.filter(n => n != null && n > 0);
+  if (!nums.length) return null;
+  // referência: lavoura de aptidão regular; sem ela, a média das aptidões produtivas
+  const prod = v.slice(0, 5).filter(n => n != null && n > 0);
+  const ref = v[1] || (prod.length ? prod.reduce((a, b) => a + b, 0) / prod.length : nums[0]);
+  return { ref, linha: v };
+}
+
+function rotuloRural(x, ha) {
+  const t = ((x.categoria || "") + " " + (x.titulo || "")).toLowerCase();
+  if (/fazenda/.test(t)) return "Fazenda";
+  if (/gleba/.test(t)) return "Gleba";
+  if (/s[ií]tio/.test(t)) return "Sítio";
+  if (/ch[aá]cara/.test(t)) return "Chácara";
+  if (ha != null && ha >= 50) return "Fazenda / área rural";
+  return "Área rural";
+}
+
+function ruralFrom(x, VTN) {
+  const base = fromLeilao(x); // reaproveita rótulos, desconto, próximo leilão e modalidade do radar principal
+  const { ha, origem, fracao } = hectaresDe(x);
+  const vt = vtnDe(x, VTN);
+  const precoHa = ha ? base.preco / ha : null;
+  return { ...base, categoria: rotuloRural(x, ha), ha, haOrigem: origem, precoHa, vtn: vt, relVtn: precoHa && vt ? precoHa / vt.ref : null, rural: ehRural(x, ha), fracao: base.fracao || !!fracao };
+}
+
+function scoreRural(rows) {
+  for (const r of rows) {
+    const parts = [];
+    // 1) preço por hectare x VTN do município (35)
+    let pV = 8, nV = "município sem VTN publicado ou área não informada";
+    if (r.relVtn != null && isFinite(r.relVtn)) {
+      // o VTN costuma ficar abaixo do preço de mercado: 0,5x do VTN vale nota cheia, 3x zera
+      pV = Math.max(0, Math.min(35, (3 - r.relVtn) / 2.5 * 35));
+      nV = r.relVtn < 1 ? Math.round((1 - r.relVtn) * 100) + "% abaixo do VTN" : r.relVtn.toFixed(1).replace(".", ",") + "x o VTN";
+    }
+    parts.push({ nome: "Preço por hectare x VTN da Receita", pts: pV, max: 35, nota: nV });
+    // 2) desconto sobre avaliação / 1º leilão (25)
+    const d = r.desconto ?? 0;
+    parts.push({ nome: "Desconto sobre a avaliação", pts: Math.min(25, d / 60 * 25), max: 25, nota: r.desconto == null ? "sem avaliação no anúncio" : d.toFixed(1).replace(".", ",") + "% abaixo" });
+    // 3) escala produtiva (15)
+    const h = r.ha;
+    const pE = h == null ? 5 : h >= 100 ? 15 : h >= 20 ? 11 : h >= 5 ? 7 : h >= 1 ? 4 : 1;
+    parts.push({ nome: "Escala da área", pts: pE, max: 15, nota: h == null ? "área não informada" : fmtHa(h) });
+    // 4) ocupação (10)
+    const pO = r.ocupacao === "desocupado" ? 10 : (r.ocupacao === "ocupado" ? 0 : 4);
+    parts.push({ nome: "Ocupação", pts: pO, max: 10, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : r.ocupacao === "ocupado" ? "ocupado: checar arrendamento ou posseiros" : "não informada" });
+    // 5) modalidade (10)
+    const mod = modalidadePeso(r.modalidade);
+    parts.push({ nome: "Modalidade de venda", pts: mod.pts, max: 10, nota: mod.label });
+    // 6) propriedade inteira (5)
+    parts.push({ nome: "Propriedade inteira", pts: r.fracao ? 0 : 5, max: 5, nota: r.fracao ? "só uma fração está à venda" : "imóvel inteiro" });
+    r.parts = parts;
+    r.score = Math.round(parts.reduce((s, p) => s + p.pts, 0));
+  }
+  rows.sort((a, b) => b.score - a.score);
+  return rows;
+}
+
+function fmtHa(h) {
+  if (h == null) return "–";
+  return (h >= 100 ? Math.round(h).toLocaleString("pt-BR") : h.toLocaleString("pt-BR", { maximumFractionDigits: h < 10 ? 2 : 1 })) + " ha";
+}
+
+</script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const money = v => v == null || !isFinite(v) ? "–" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const pct = v => v == null || !isFinite(v) ? "–" : v.toFixed(1).replace(".", ",") + "%";
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const tier = s => s >= 70 ? "s-good" : s >= 50 ? "s-mid" : "s-low";
+  const fmtData = d => { const t = new Date(d); return isNaN(t) ? "" : t.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }); };
+  const fmtDataHora = d => { const t = new Date(d); return isNaN(t) ? "–" : t.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }); };
+  const vendedor = r => {
+    const c = r.comitente || "";
+    if (/cresol/i.test(c)) return "Cresol";
+    if (/sicredi/i.test(c)) return "Sicredi";
+    if (/cooperativa de cr[eé]dito/i.test(c)) return "Cooperativas de crédito";
+    return c || "Sem banco (judicial e outros)";
+  };
+  const relTxt = r => r == null ? "" : r < 1 ? `${Math.round((1 - r) * 100)}% abaixo do VTN` : `${r.toFixed(1).replace(".", ",")}x o VTN`;
+  const uniq = a => [...new Set(a)].sort((x, y) => String(x).localeCompare(String(y), "pt-BR"));
+  const fill = (el, all, opts) => { el.innerHTML = `<option value="">${all}</option>` + opts.map(o => `<option>${esc(o)}</option>`).join(""); };
+
+  let ALL = [], VTN = null, shown = 30, estado = "loading", erroTxt = "", atualizado = "";
+
+  function rebuildFilters() {
+    fill($("fUF"), "Todos os estados", uniq(ALL.map(r => r.uf).filter(Boolean)));
+    fillMun();
+    fill($("fBanco"), "Todos os vendedores", uniq(ALL.map(vendedor)));
+  }
+  function fillMun() {
+    const uf = $("fUF").value, atual = $("fCidade").value;
+    const opts = uniq((uf ? ALL.filter(r => r.uf === uf) : ALL).map(r => r.cidade + (r.uf ? " / " + r.uf : "")));
+    fill($("fCidade"), uf ? `Todos de ${uf}` : "Todos os municípios", opts);
+    if (opts.includes(atual)) $("fCidade").value = atual;
+  }
+
+  function filtered() {
+    const uf = $("fUF").value, c = $("fCidade").value, bn = $("fBanco").value, ha = +$("fHa").value, vt = +$("fVtn").value;
+    const d = +$("fDesc").value, p = +$("fPreco").value || Infinity, s = +$("fScore").value, oc = $("fOcup").checked, int = $("fInteiro").checked;
+    const r = ALL.filter(x => (!uf || x.uf === uf) && (!c || x.cidade + (x.uf ? " / " + x.uf : "") === c) && (!bn || vendedor(x) === bn) &&
+      (!ha || (x.ha != null && x.ha >= ha)) && (!vt || (x.relVtn != null && x.relVtn <= vt)) && (x.desconto ?? 0) >= d && x.preco <= p && x.score >= s &&
+      (!oc || x.ocupacao === "desocupado") && (!int || !x.fracao));
+    const nz = v => v == null || !isFinite(v) ? Infinity : v;
+    const by = {
+      score: (a, b) => b.score - a.score, vtn: (a, b) => nz(a.relVtn) - nz(b.relVtn), ha: (a, b) => (b.ha || 0) - (a.ha || 0),
+      precoHa: (a, b) => nz(a.precoHa) - nz(b.precoHa), desconto: (a, b) => (b.desconto ?? 0) - (a.desconto ?? 0), preco: (a, b) => a.preco - b.preco
+    }[$("sort").value];
+    return r.slice().sort(by);
+  }
+
+  function render() {
+    const r = filtered();
+    const area = r.reduce((s, x) => s + (x.ha || 0), 0);
+    const abaixo = r.filter(x => x.relVtn != null && x.relVtn <= 1).length;
+    $("kpis").innerHTML = [
+      [r.length.toLocaleString("pt-BR"), "imóveis rurais no filtro"],
+      [Math.round(area).toLocaleString("pt-BR") + " ha", "de área somada"],
+      [abaixo.toLocaleString("pt-BR"), "com preço por hectare até o VTN"],
+      [r.filter(x => x.score >= 70).length.toLocaleString("pt-BR"), "com score 70 ou mais"]
+    ].map(([v, l]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span></div>`).join("");
+    $("count").textContent = ALL.length ? ` ${r.length} de ${ALL.length}` : "";
+    $("rows").innerHTML = r.length ? r.slice(0, shown).map(rowHTML).join("") :
+      `<div class="empty">${estado === "loading" ? "Carregando…" : "Nenhum imóvel com esses filtros."}</div>`;
+    $("more").hidden = r.length <= shown;
+    $("fDescV").textContent = $("fDesc").value + "%";
+    $("fScoreV").textContent = $("fScore").value;
+  }
+
+  function rowHTML(x) {
+    const i = ALL.indexOf(x);
+    const chips = [
+      `<span class="chip">${esc(vendedor(x))}</span>`,
+      x.fracao ? '<span class="chip warn">Fração</span>' : "",
+      x.ocupacao === "desocupado" ? '<span class="chip fin">Desocupado</span>' : (x.ocupacao === "ocupado" ? '<span class="chip warn">Ocupado</span>' : ""),
+      x.relVtn != null ? `<span class="chip${x.relVtn <= 1 ? " fin" : ""}">${relTxt(x.relVtn)}</span>` : "",
+      x.dataLeilao ? `<span class="chip">Leilão ${fmtData(x.dataLeilao)}</span>` : ""
+    ].join("");
+    const desc = x.desconto != null ? `<span class="d">−${pct(x.desconto)}${x.proximo ? " no 2º" : ""}</span>` : "";
+    return `<button class="row" data-i="${i}" type="button">
+      <span class="badge ${tier(x.score)}" aria-label="Score ${x.score}">${x.score}</span>
+      <span class="rinfo">
+        <span class="rtitle">${esc(x.categoria || x.tipo)}${x.ha ? ` · ${fmtHa(x.ha)}` : ""}</span>
+        <span class="rmeta">${esc(x.cidade)}${x.uf ? " / " + esc(x.uf) : ""}${x.precoHa ? ` · <span class="ha">${money(x.precoHa)}/ha</span>` : ""}</span>
+        <span class="chips">${chips}</span>
+      </span>
+      <span class="rprice"><span class="p">${money(x.preco)}</span>${desc}${x.avaliacao && !x.proximo ? `<span class="a">${money(x.avaliacao)}</span>` : ""}</span>
+    </button>`;
+  }
+
+  const CHECK = [
+    "Pedir a matrícula atualizada e conferir área, ônus, hipotecas e reserva legal averbada",
+    "Consultar o CAR (Cadastro Ambiental Rural) e se há área de reserva legal e APP a recompor",
+    "Verificar embargos no IBAMA e no órgão ambiental do estado para o imóvel e o proprietário",
+    "Pedir CCIR (INCRA), certidão negativa do ITR e o georreferenciamento no SIGEF",
+    "Checar arrendamentos, parcerias ou posseiros: eles podem continuar após a compra",
+    "Confirmar acesso, água (outorga), energia e o uso da terra com uma visita técnica"
+  ];
+
+  function openDetail(x) {
+    const d = $("detail");
+    const link = x.link && /^https?:\/\//.test(x.link) ? x.link : null;
+    const cols = VTN ? VTN.colunas : [];
+    const vtnHTML = x.vtn ? `<div class="vtnbox"><h3>VTN 2026 de ${esc(x.cidade)} (R$ por hectare)</h3><table>${x.vtn.linha.map((v, k) => v ? `<tr class="${k === 1 ? "ref" : ""}"><td>${esc(cols[k])}${k === 1 ? " (referência)" : ""}</td><td>${money(v)}</td></tr>` : "").join("")}</table>
+      <small>Este imóvel: ${x.precoHa ? money(x.precoHa) + " por hectare, " + relTxt(x.relVtn) : "área não informada no anúncio"}. O VTN mede só a terra nua e costuma ficar abaixo do mercado.</small></div>`
+      : `<div class="vtnbox"><h3>VTN do município</h3><small>A Receita não publicou VTN para ${esc(x.cidade || "este município")} em 2026, ou o nome não bateu com a tabela. Compare com o VTN de municípios vizinhos.</small></div>`;
+    const avisos = [
+      x.proximo ? `Este é o valor do 1º leilão, em ${fmtDataHora(x.dataLeilao)}. Se não houver lance, o 2º leilão começa em <b>${money(x.proximo.valor)}</b>${x.proximo.data ? ` em ${fmtDataHora(x.proximo.data)}` : ""}.` : "",
+      x.fracao ? "Só uma fração do imóvel está à venda. A área e o preço por hectare consideram a fração quando o anúncio informa o percentual; confira com um advogado como funciona o condomínio rural." : "",
+      x.haOrigem && /m²/.test(x.haOrigem) && x.ha < 2 ? "Área pequena para uso agrícola: pode ser chácara de lazer. Confira a destinação na matrícula." : ""
+    ].filter(Boolean).map(t => `<div class="alerta">${t}</div>`).join("");
+    d.innerHTML = `<div class="scrim" data-close="1"></div>
+    <aside class="panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+      <div class="ptop"><div><span class="eyebrow">Radar Rural · lote ${esc(x.id || "")}</span>
+        <h2 id="dTitle">${esc(x.categoria || x.tipo)}${x.ha ? " de " + fmtHa(x.ha) : ""} em ${esc(x.cidade)}</h2>
+        <div class="addr">${esc(x.cidade)}${x.uf ? " / " + esc(x.uf) : ""}</div></div>
+        <button class="close" data-close="1" type="button" aria-label="Fechar">×</button></div>
+      <div class="scorebox"><span class="badge big ${tier(x.score)}">${x.score}</span>
+        <div class="bars">${x.parts.map(p => `<div class="bar"><div class="t"><span>${p.nome}</span><span>${Math.round(p.pts)}/${p.max}</span></div>
+          <div class="track"><div class="fill" style="width:${(p.pts / p.max * 100).toFixed(0)}%"></div></div><span class="n">${esc(p.nota)}</span></div>`).join("")}</div></div>
+      ${avisos}
+      <div class="facts">
+        <div class="fact"><span class="k">${esc(x.precoLabel || "Preço")}</span><span class="v">${money(x.preco)}</span></div>
+        <div class="fact"><span class="k">${esc(x.refLabel || "Avaliação")}</span><span class="v">${money(x.avaliacao)}</span></div>
+        <div class="fact"><span class="k">Área</span><span class="v">${fmtHa(x.ha)}</span>${x.haOrigem ? `<span class="conv">${esc(x.haOrigem)}</span>` : ""}</div>
+        <div class="fact"><span class="k">Preço por hectare</span><span class="v">${money(x.precoHa)}</span></div>
+        <div class="fact"><span class="k">Desconto</span><span class="v">${pct(x.desconto)}</span></div>
+        <div class="fact"><span class="k">Vendedor</span><span class="v">${esc(vendedor(x))}</span></div>
+        <div class="fact"><span class="k">Data</span><span class="v">${x.dataLeilao ? fmtDataHora(x.dataLeilao) : "–"}</span></div>
+        <div class="fact"><span class="k">Ocupação</span><span class="v">${x.ocupacao === "desocupado" ? "Desocupado" : x.ocupacao === "ocupado" ? "Ocupado" : "Não informada"}</span></div>
+      </div>
+      ${vtnHTML}
+      <div class="desc">${esc(x.descricao)}<br>${esc(x.modalidade)}</div>
+      <div class="todo"><h3>Antes de dar lance</h3><ul>${CHECK.map(t => `<li>${t}</li>`).join("")}</ul></div>
+      <div class="pactions">
+        ${link ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">Abrir no site do leiloeiro</a>` : ""}
+        <button class="btn" type="button" id="copy">Copiar resumo para WhatsApp</button>
+      </div>
+    </aside>`;
+    d.hidden = false;
+    d.querySelector(".close").focus();
+    d.onclick = e => { if (e.target.dataset.close) closeDetail(); };
+    $("copy").onclick = () => copyText(summary(x), d.querySelector(".pactions"));
+  }
+  function closeDetail() { $("detail").hidden = true; $("detail").innerHTML = ""; }
+
+  function summary(x) {
+    return `*Radar Rural (score ${x.score}/100)*
+${x.categoria || x.tipo}${x.ha ? " · " + fmtHa(x.ha) : ""} · ${x.cidade}/${x.uf}
+${x.precoLabel}: ${money(x.preco)}${x.precoHa ? " | " + money(x.precoHa) + "/ha (" + relTxt(x.relVtn) + ")" : ""}${x.desconto != null ? " | Desconto: " + pct(x.desconto) : ""}
+Vendedor: ${vendedor(x)} | ${x.modalidade}${x.fracao ? " | Fração" : ""}
+${x.link || ""}`.trim();
+  }
+  function copyText(t, after) {
+    const fallback = () => {
+      if (after.parentNode.querySelector("textarea")) return;
+      const ta = document.createElement("textarea");
+      ta.className = "copyarea"; ta.value = t; ta.readOnly = true;
+      after.after(ta); ta.focus(); ta.select();
+      toast("Selecione e copie o texto abaixo");
+    };
+    try { navigator.clipboard.writeText(t).then(() => toast("Resumo copiado"), fallback); } catch (e) { fallback(); }
+  }
+  function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2200); }
+
+  $("fUF").addEventListener("input", fillMun);
+  ["fUF", "fCidade", "fBanco", "fHa", "fVtn", "fDesc", "fPreco", "fScore", "fOcup", "fInteiro", "sort"].forEach(id => $(id).addEventListener("input", () => { shown = 30; render(); }));
+  $("reset").onclick = () => { ["fUF", "fCidade", "fBanco", "fVtn", "fPreco"].forEach(id => $(id).value = ""); $("fHa").value = "0"; $("fDesc").value = 0; $("fScore").value = 0; $("fOcup").checked = $("fInteiro").checked = false; fillMun(); render(); };
+  $("more").onclick = () => { shown += 30; render(); };
+  $("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) openDetail(ALL[+b.dataset.i]); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("detail").hidden) closeDetail(); });
+
+  const API = window.RADAR_API;
+  async function lerAPI() {
+    const r = await fetch(`${API.url}&limit=5000`, { headers: { apikey: API.key } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const rows = await r.json();
+    return { rows, gerado_em: rows.reduce((m, x) => x.visto_ultimo > m ? x.visto_ultimo : m, "") };
+  }
+  $("msg").innerHTML = `<div class="notice"><span><strong>Carregando imóveis rurais…</strong></span></div>`;
+  render();
+  Promise.all([
+    fetch("vtn.json").then(r => r.json()).catch(() => null),
+    (API ? lerAPI().catch(() => fetch("rural.json").then(r => r.json())) : fetch("rural.json").then(r => r.json()))
+  ]).then(([vtn, j]) => {
+    VTN = vtn;
+    ALL = scoreRural((j.rows || []).map(x => ruralFrom(x, VTN)).filter(r => r.rural));
+    atualizado = fmtDataHora(j.gerado_em);
+    estado = "ok";
+    const comVtn = ALL.filter(r => r.vtn).length;
+    $("msg").innerHTML = `<div class="source">Fontes: <b>Mega Leilões, Zuk, Superbid/Sold e Resale</b>, atualizado em ${esc(atualizado)}. Referência de preço: VTN 2026 da Receita Federal (${comVtn} de ${ALL.length} imóveis em municípios com VTN publicado).</div>`;
+    rebuildFilters(); render();
+  }).catch(e => { estado = "error"; $("msg").innerHTML = `<div class="notice error"><span><strong>Não foi possível carregar.</strong> ${esc(e.message || "Tente recarregar a página.")}</span></div>`; render(); });
+})();
+
+</script></body></html>
