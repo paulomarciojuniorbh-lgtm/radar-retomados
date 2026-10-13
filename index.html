@@ -127,6 +127,7 @@ button,select,input{font:inherit;color:inherit}
 .pais small{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--muted)}
 .pais[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .pais:hover{border-color:var(--accent)}
+@media (max-width:600px){.pais{padding:8px 12px;font-size:14px;gap:8px}}
 .fx{font-size:12px;color:var(--muted);font-family:var(--mono)}
 .conv{font-size:12px;color:var(--muted);font-family:var(--mono)}
 .prox{font-size:13px;color:var(--good);font-weight:600}
@@ -136,9 +137,9 @@ button,select,input{font:inherit;color:inherit}
 </style></head><body><script>window.RADAR_API = { url: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_imoveis?select=lote,fonte,pais,moeda,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,quartos,banheiros,fracao,visto_ultimo&ativo=eq.true&order=id", fx: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_cambio?select=moeda,brl", key: "sb_publishable_Ji31DC1ihqZTR7gmLeYTLw_GHgBjWN0" };</script><div class="wrap" id="app">
   <header class="top">
     <div class="brand">
-      <span class="eyebrow">Imóveis retomados · Brasil, EUA e Portugal</span>
+      <span class="eyebrow">Imóveis retomados · Brasil e exterior</span>
       <h1>Radar Retomados</h1>
-      <p>Reúne imóveis retomados e de leilão no Brasil, na Flórida (EUA) e em Portugal, calcula um score de oportunidade para cada um e mostra primeiro o que merece análise. Valores no exterior com conversão aproximada para reais.</p>
+      <p>Reúne imóveis retomados e de leilão no Brasil, nos EUA, no Canadá, em Portugal, no Chile e na Argentina, calcula um score de oportunidade para cada um e mostra primeiro o que merece análise. Valores no exterior com conversão aproximada para reais.</p>
     </div>
     <div class="actions">
       <label class="btn" for="file" id="btnCaixa">Somar lista da Caixa (.csv)</label>
@@ -150,7 +151,10 @@ button,select,input{font:inherit;color:inherit}
   <nav class="paises" aria-label="País">
     <button class="pais" type="button" data-pais="BR" aria-pressed="true">Brasil <small id="nBR">–</small></button>
     <button class="pais" type="button" data-pais="US" aria-pressed="false">EUA · Flórida <small id="nUS">–</small></button>
+    <button class="pais" type="button" data-pais="CA" aria-pressed="false">Canadá · Ontário <small id="nCA">–</small></button>
     <button class="pais" type="button" data-pais="PT" aria-pressed="false">Portugal <small id="nPT">–</small></button>
+    <button class="pais" type="button" data-pais="CL" aria-pressed="false">Chile <small id="nCL">–</small></button>
+    <button class="pais" type="button" data-pais="AR" aria-pressed="false">Argentina <small id="nAR">–</small></button>
   </nav>
 
   <div id="msg"></div>
@@ -191,7 +195,7 @@ button,select,input{font:inherit;color:inherit}
 
   <footer class="foot">
     <span><b>Como o score funciona:</b> desconto sobre o valor de referência de cada fonte (até 40 pts), preço do m² comparado à mediana do mesmo tipo de imóvel na cidade (25), ocupação ou financiamento (15), modalidade de venda (10) e liquidez do tipo de imóvel (10). A nota compara imóveis dentro do mesmo país.</span>
-    <span><b>Fontes:</b> Mega Leilões (Brasil), Hubzu (EUA, Flórida) e Leilosoc (Portugal), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência do Banco Central Europeu. <span class="fx" id="fxInfo"></span></span>
+    <span><b>Fontes:</b> Mega Leilões (Brasil), Hubzu (EUA, Flórida), Ontario Gazette (Canadá, Ontário), Leilosoc (Portugal), Macal (Chile) e Banco Ciudad (Argentina), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência atualizado diariamente. <span class="fx" id="fxInfo"></span></span>
     <span>O score é um filtro para priorizar análise. Não substitui a leitura do edital, da matrícula ou do registo predial, nem a orientação de um advogado no país do imóvel.</span>
   </footer>
 </div>
@@ -320,8 +324,8 @@ function parseCaixaCSV(text) {
 function fromLeilao(x) {
   const pr = x.n_pracas === 1 ? "praça única" : (x.n_pracas ? x.n_pracas + " praças" : "");
   const v1 = x.valor_1 != null ? +x.valor_1 : null, v2 = x.valor_2 != null ? +x.valor_2 : null, va = +x.valor_atual;
-  const LABEL = { mega: "Valor do 1º leilão", hubzu: "Preço de lista", leilosoc: "Valor base" };
-  const PRECO = { mega: "Lance mínimo atual", hubzu: "Lance atual", leilosoc: v2 ? "Valor mínimo de venda" : "Lance inicial" };
+  const LABEL = { mega: "Valor do 1º leilão", hubzu: "Preço de lista", leilosoc: "Valor base", ontario: "Valor venal (assessment)", macal: "Avaliação (não publicada)", ciudad: "Avaliação (não publicada)" };
+  const PRECO = { mega: "Lance mínimo atual", hubzu: "Lance atual", leilosoc: v2 ? "Valor mínimo de venda" : "Lance inicial", ontario: "Proposta mínima", macal: "Lance mínimo", ciudad: "Base do leilão" };
   // Mega: 1º leilão ainda não aconteceu -> preço atual é o do 1º; o desconto só vale no 2º
   let proximo = null;
   if (x.fonte === "mega" && v1 && v2 && v2 < v1 && va >= v1 * 0.999) proximo = { valor: v2, data: x.data_2 || null };
@@ -355,6 +359,7 @@ function median(a) {
 
 function modalidadePeso(m) {
   const k = normKey(m);
+  if (k.includes("taxsale")) return { pts: 7, label: "Venda por impostos: proposta fechada, mínimo é a dívida" };
   if (k.includes("vendadireta")) return { pts: 10, label: "Venda direta: compra imediata, sem disputa" };
   if (k.includes("licitacao")) return { pts: 7, label: "Licitação aberta: proposta com prazo definido" };
   if (k.includes("2leilao") || k.includes("segundoleilao")) return { pts: 8, label: "2º leilão: lance mínimo costuma ser menor" };
@@ -378,7 +383,9 @@ function scoreAll(rows) {
     const parts = [];
     const d = r.desconto ?? 0;
     const pDesc = Math.min(40, (d / 60) * 40);
-    parts.push({ nome: r.fonte && r.fonte !== "caixa" ? "Desconto sobre o 1º leilão" : "Desconto sobre a avaliação", pts: pDesc, max: 40, nota: r.desconto == null ? (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado") : d.toFixed(1).replace(".", ",") + "% abaixo" });
+    const NOME_D = { caixa: "Desconto sobre a avaliação", ontario: "Desconto sobre o valor venal", hubzu: "Desconto sobre o preço de lista", leilosoc: "Desconto sobre o valor base", macal: "Desconto sobre a avaliação", ciudad: "Desconto sobre a avaliação" };
+    const SEM_D = { macal: "a leiloeira não publica avaliação", ciudad: "o banco não publica avaliação", ontario: "sem valor venal, ou mínimo acima dele" };
+    parts.push({ nome: NOME_D[r.fonte || "caixa"] || "Desconto sobre o 1º leilão", pts: pDesc, max: 40, nota: r.desconto == null ? (SEM_D[r.fonte] || (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado")) : d.toFixed(1).replace(".", ",") + "% abaixo" });
     const gk = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
     const m = med[gk];
     let pM2 = 10, notaM2 = "sem área para comparar";
@@ -420,7 +427,7 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
 <script>
 (function () {
   const $ = id => document.getElementById(id);
-  const MOEDA = { BRL: "R$", USD: "US$", EUR: "€" };
+  const MOEDA = { BRL: "R$", USD: "US$", EUR: "€", CAD: "C$", CLP: "CLP$", ARS: "AR$" };
   const money = (v, m = "BRL") => v == null || !isFinite(v) ? "–" : v.toLocaleString("pt-BR", { style: "currency", currency: m, maximumFractionDigits: 0 });
   const pct = v => v == null || !isFinite(v) ? "–" : v.toFixed(1).replace(".", ",") + "%";
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -429,12 +436,13 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
   const fmtDataHora = d => { const t = new Date(d); return isNaN(t) ? "–" : t.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }); };
 
   const STORE = "radar-retomados-filtros";
-  const PAISES = { BR: "Brasil", US: "EUA", PT: "Portugal" };
-  const HASH = { brasil: "BR", eua: "US", portugal: "PT" };
+  const PAISES = { BR: "Brasil", US: "EUA", CA: "Canadá", PT: "Portugal", CL: "Chile", AR: "Argentina" };
+  const HASH = { brasil: "BR", eua: "US", canada: "CA", portugal: "PT", chile: "CL", argentina: "AR" };
+  const MOEDA_PAIS = { BR: "BRL", US: "USD", CA: "CAD", PT: "EUR", CL: "CLP", AR: "USD" };
   let TODOS = [], ALL = [], LEILAO = [], CAIXA = [], FX = {}, PAIS = "BR", shown = 30, estado = "loading", erroTxt = "", atualizado = "", caixaFile = "";
 
   const conv = (v, m) => m !== "BRL" && FX[m] && v ? "≈ " + money(v * FX[m], "BRL") : "";
-  const vendedor = r => r.fonte === "caixa" ? "Caixa" : (r.comitente || "Sem banco (judicial e outros)");
+  const vendedor = r => r.fonte === "caixa" ? "Caixa" : ((r.comitente || "").replace(/^(the\s+)?corp(oration|oratio|\.)?\s+of\s+(the\s+)?/i, "") || "Sem banco (judicial e outros)");
 
   function rebuild() {
     TODOS = scoreAll([...LEILAO, ...CAIXA].map(r => ({ ...r })));
@@ -456,7 +464,7 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     fillSelect($("fBanco"), "Todos os vendedores", uniq(ALL.map(vendedor)));
     fillSelect($("fTipo"), "Todos os tipos", uniq(ALL.map(r => r.tipo)));
     fillSelect($("fModal"), "Todas", uniq(ALL.map(r => r.modalidade).filter(Boolean)));
-    $("lblPreco").textContent = `Preço máximo (${MOEDA[{ BR: "BRL", US: "USD", PT: "EUR" }[p]]})`;
+    $("lblPreco").textContent = `Preço máximo (${MOEDA[MOEDA_PAIS[p]]})`;
     $("boxFin").hidden = p !== "BR";
     $("btnCaixa").hidden = p !== "BR";
     renderMsg(); render();
@@ -481,8 +489,15 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     if (estado === "loading") m.innerHTML = `<div class="notice"><span><strong>Carregando os imóveis…</strong></span></div>`;
     else if (estado === "error") m.innerHTML = `<div class="notice error"><span><strong>Não foi possível carregar.</strong> ${esc(erroTxt)}</span></div>`;
     else {
-      const fonte = { BR: "Mega Leilões" + (CAIXA.length ? ` + Caixa (${caixaFile})` : ""), US: "Hubzu · imóveis retomados por bancos na Flórida", PT: "Leilosoc · leilões em Portugal" }[PAIS];
-      const extra = PAIS === "PT" ? " Portugal ainda tem poucas fontes abertas: a lista vai crescer com novas leiloeiras." : "";
+      const fonte = { BR: "Mega Leilões" + (CAIXA.length ? ` + Caixa (${caixaFile})` : ""), US: "Hubzu · imóveis retomados por bancos na Flórida",
+        CA: "Ontario Gazette · vendas de imóveis por impostos atrasados (tax sales) em Ontário", PT: "Leilosoc · leilões em Portugal",
+        CL: "Macal · leilões de imóveis de bancos e falências no Chile", AR: "Banco Ciudad · leilões de imóveis em Buenos Aires" }[PAIS];
+      const extra = {
+        PT: " Portugal ainda tem poucas fontes abertas: a lista vai crescer com novas leiloeiras.",
+        CA: " Atenção: a lei canadense proíbe estrangeiros não residentes de comprar imóvel residencial (proibição válida até 1º/1/2027, podendo ser prorrogada). Terrenos e comerciais podem ter regras diferentes: confirme com advogado.",
+        CL: " A Macal não publica valor de avaliação, então a nota compara o preço do m² entre imóveis da mesma comuna.",
+        AR: " O Banco Ciudad leiloa poucos imóveis por vez (em geral heranças vacantes da cidade); a lista muda a cada leilão."
+      }[PAIS] || "";
       m.innerHTML = `<div class="source">Fonte: <b>${esc(fonte)}</b>, atualizado em ${esc(atualizado)}.${extra}</div>`;
     }
   }
@@ -523,7 +538,7 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
       x.fracao ? '<span class="chip warn">Fração do imóvel</span>' : "",
       x.ocupacao === "desocupado" ? '<span class="chip fin">Desocupado</span>' : (x.ocupacao === "ocupado" ? '<span class="chip warn">Ocupado</span>' : ""),
       x.financiamento ? '<span class="chip fin">Financiamento</span>' : "",
-      x.dataLeilao ? `<span class="chip">${x.pais === "BR" ? "Leilão" : "Termina"} ${fmtData(x.dataLeilao)}</span>` : "",
+      x.dataLeilao ? `<span class="chip">${x.pais === "BR" || x.pais === "CL" || x.pais === "AR" ? "Leilão" : x.pais === "CA" ? "Propostas até" : "Termina"} ${fmtData(x.dataLeilao)}</span>` : "",
       x.relM2 && x.relM2 < .85 ? `<span class="chip">m² ${Math.round((1 - x.relM2) * 100)}% abaixo</span>` : ""
     ].join("");
     const desc = x.desconto != null ? `<span class="d">−${pct(x.desconto)}${x.proximo ? " no 2º" : ""}</span>` : "";
@@ -541,7 +556,10 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
   const CHECK = {
     BR: ["Ler a matrícula atualizada: ônus, penhoras e averbações", "Ler o edital: quem paga condomínio, IPTU e despesas de desocupação", "Confirmar se o imóvel está ocupado e estimar prazo e custo de desocupação", "Somar ITBI, registro, reforma e comissão do leiloeiro ao preço", "Comparar com anúncios de imóveis parecidos no mesmo bairro"],
     US: ["Pesquisar o título do imóvel (title search) e dívidas que ficam com o comprador", "Somar buyer's premium, custos de fechamento e impostos anuais (property tax)", "O imóvel é vendido no estado em que se encontra (as is): inspecione antes", "Definir como comprar (pessoa física ou empresa) com advogado e contador nos EUA", "Prever o imposto na revenda para estrangeiros (FIRPTA)"],
-    PT: ["Pedir a certidão permanente do registo predial e verificar ónus", "Somar IMT, Imposto do Selo e IMI ao preço", "Ler as condições do leilão: caução, prazos e forma de pagamento", "Ter NIF português para poder comprar", "Se for fração do imóvel, entender os direitos dos outros proprietários"]
+    PT: ["Pedir a certidão permanente do registo predial e verificar ónus", "Somar IMT, Imposto do Selo e IMI ao preço", "Ler as condições do leilão: caução, prazos e forma de pagamento", "Ter NIF português para poder comprar", "Se for fração do imóvel, entender os direitos dos outros proprietários"],
+    CA: ["Confirmar se você pode comprar: estrangeiros não residentes estão proibidos de comprar imóvel residencial (regra válida até 1º/1/2027, podendo ser prorrogada)", "Ler o aviso completo da prefeitura e pedir o formulário oficial de proposta (Form 7)", "A proposta é fechada e vence a maior: a proposta mínima só cobre os impostos atrasados", "Separar 20% da proposta para o depósito em cheque administrativo, mais impostos de transferência e NRST", "Pesquisar o título: a prefeitura não garante o título nem entrega o imóvel desocupado"],
+    CL: ["Pedir o certificado de domínio vigente e o de hipotecas e gravames no Conservador de Bienes Raíces", "Ler as bases do leilão: garantia, comissão da Macal e prazo para pagar o saldo", "Ter RUT chileno para assinar a escritura", "Se estiver ocupado ou arrendado, entender o prazo e o custo para receber o imóvel", "Somar contribuciones (imposto do imóvel) e dívidas de condomínio"],
+    AR: ["Ler o edital (condiciones de venta) do Banco Ciudad: garantia, comissão e prazo de pagamento", "Ter CUIT/CDI argentino para participar e escriturar", "Confirmar a moeda: muitos leilões são em dólar e pedem garantia antecipada", "Verificar dívidas de ABL, AySA e expensas que ficam com o comprador", "Visitar o imóvel na data de exibição: é vendido no estado em que se encontra"]
   };
 
   function openDetail(x) {
@@ -551,8 +569,11 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
       x.proximo ? `Este é o valor do 1º leilão, em ${fmtDataHora(x.dataLeilao)}. Se não houver lance, o 2º leilão começa em <b>${money(x.proximo.valor, x.moeda)}</b>${x.proximo.data ? ` em ${fmtDataHora(x.proximo.data)}` : ""}.` : "",
       x.fonte === "leilosoc" && x.precoLabel === "Lance inicial" ? "Valor de lance inicial. O vendedor pode exigir um valor mínimo maior para fechar a venda: confirme nas condições do leilão." : "",
       x.fracao ? "Só uma parte (fração) do imóvel está à venda. Avalie com um advogado como funciona a copropriedade." : "",
+      x.pais === "CA" ? "Venda por impostos atrasados: o valor mostrado é a <b>proposta mínima</b> (a dívida com a prefeitura). As propostas são fechadas e vence a maior, então o preço final costuma ser bem mais alto. O valor venal (assessment) pode não refletir o preço de mercado." : "",
+      x.pais === "CA" ? "Estrangeiros não residentes estão proibidos de comprar imóvel residencial no Canadá (regra válida até 1º/1/2027, podendo ser prorrogada). Confirme com um advogado antes de propor." : "",
+      (x.pais === "CL" || x.pais === "AR") && x.desconto == null ? "A leiloeira não publica valor de avaliação. Compare com anúncios de imóveis parecidos na mesma região antes de decidir." : "",
       x.inconsistente ? "O último leilão tem valor mínimo acima do 1º. Isso acontece quando a dívida supera a avaliação. Confira no edital." : "",
-      x.moeda !== "BRL" && FX[x.moeda] ? `Conversão aproximada pelo câmbio de referência: 1 ${MOEDA[x.moeda]} = ${money(FX[x.moeda] * 100, "BRL").replace(/\s/g, " ")} a cada 100. Use a cotação do seu banco para decidir.` : ""
+      x.moeda !== "BRL" && FX[x.moeda] ? `Conversão aproximada pelo câmbio de referência: ${MOEDA[x.moeda]} 1 = R$ ${FX[x.moeda].toLocaleString("pt-BR", { maximumSignificantDigits: 3 })}. Use a cotação do seu banco para decidir.` : ""
     ].filter(Boolean).map(t => `<div class="alerta">${t}</div>`).join("");
     d.innerHTML = `<div class="scrim" data-close="1"></div>
     <aside class="panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
@@ -569,7 +590,7 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
         <div class="fact"><span class="k">${esc(x.refLabel || "Valor de referência")}</span><span class="v">${money(x.avaliacao, x.moeda)}</span></div>
         <div class="fact"><span class="k">Desconto${x.proximo ? " no 2º leilão" : ""}</span><span class="v">${pct(x.desconto)}</span></div>
         <div class="fact"><span class="k">Vendedor</span><span class="v">${esc(vendedor(x))}</span></div>
-        <div class="fact"><span class="k">${x.pais === "BR" ? "Próximo leilão" : "Encerramento"}</span><span class="v">${x.dataLeilao ? fmtDataHora(x.dataLeilao) : "–"}</span></div>
+        <div class="fact"><span class="k">${x.pais === "BR" || x.pais === "CL" || x.pais === "AR" ? "Data do leilão" : x.pais === "CA" ? "Prazo das propostas" : "Encerramento"}</span><span class="v">${x.dataLeilao ? fmtDataHora(x.dataLeilao) : "–"}</span></div>
         <div class="fact"><span class="k">Ocupação</span><span class="v">${x.ocupacao === "desocupado" ? "Desocupado" : x.ocupacao === "ocupado" ? "Ocupado" : "Não informada"}</span></div>
         <div class="fact"><span class="k">Área considerada</span><span class="v">${x.area ? Math.round(x.area).toLocaleString("pt-BR") + " m²" : "–"}</span></div>
         <div class="fact"><span class="k">Preço por m²</span><span class="v">${money(x.pm2, x.moeda)}</span></div>
@@ -663,7 +684,8 @@ ${x.link || ""}`.trim();
     if (j.cambio) FX = j.cambio;
     atualizado = fmtDataHora(j.gerado_em);
     estado = "ok";
-    $("fxInfo").textContent = FX.USD ? `Câmbio usado: US$ 1 = ${money(FX.USD * 100, "BRL")}/100 · € 1 = ${money(FX.EUR * 100, "BRL")}/100.` : "";
+    const fx2 = (m, nome) => FX[m] ? `${nome} 1 = R$ ${FX[m].toLocaleString("pt-BR", { maximumSignificantDigits: 3 })}` : "";
+    $("fxInfo").textContent = FX.USD ? "Câmbio usado: " + [fx2("USD", "US$"), fx2("EUR", "€"), fx2("CAD", "C$"), fx2("CLP", "CLP$"), fx2("ARS", "AR$")].filter(Boolean).join(" · ") + "." : "";
     rebuild();
   }).catch(e => { estado = "error"; erroTxt = e.message || "Tente recarregar a página."; renderMsg(); render(); });
 })();
