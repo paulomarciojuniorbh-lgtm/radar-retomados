@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style><meta name="description" content="Imóveis retomados de bancos ranqueados por oportunidade, atualizados todo dia."><title>Radar Retomados</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><style>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style><meta name="description" content="Imóveis retomados por bancos e de leilão no Brasil, EUA e Portugal, ranqueados de 0 a 100."><title>Radar Retomados</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"><style>
 /* Layout: barra de ferramentas + resumo; abaixo, filtros à esquerda e ranking à direita; detalhe em painel lateral (tela cheia no celular) */
 :root{
   --bg:#F2F4F3; --surface:#FFFFFF; --sunk:#E8ECEA; --ink:#14201C; --muted:#5A6A65; --line:#D5DDDA;
@@ -122,28 +122,36 @@ button,select,input{font:inherit;color:inherit}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:30;font-size:14px}
 .copyarea{width:100%;min-height:150px;font-family:var(--mono);font-size:12px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
 
+.paises{display:flex;flex-wrap:wrap;gap:8px}
+.pais{display:inline-flex;align-items:center;gap:10px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;color:var(--ink)}
+.pais small{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--muted)}
+.pais[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.pais:hover{border-color:var(--accent)}
+.fx{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.conv{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.prox{font-size:13px;color:var(--good);font-weight:600}
+.alerta{font-size:13px;background:var(--mid-soft);color:var(--ink);padding:8px 10px;border-radius:8px}
 .foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;display:grid;gap:6px;max-width:80ch}
 @media (prefers-reduced-motion:no-preference){.panel{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
-</style></head><body><script>window.RADAR_API = { url: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_imoveis?select=lote,fonte,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,visto_ultimo&ativo=eq.true&order=id", key: "sb_publishable_Ji31DC1ihqZTR7gmLeYTLw_GHgBjWN0" };</script>
-
-
-
-
-
-<div class="wrap" id="app">
+</style></head><body><script>window.RADAR_API = { url: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_imoveis?select=lote,fonte,pais,moeda,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,quartos,banheiros,fracao,visto_ultimo&ativo=eq.true&order=id", fx: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_cambio?select=moeda,brl", key: "sb_publishable_Ji31DC1ihqZTR7gmLeYTLw_GHgBjWN0" };</script><div class="wrap" id="app">
   <header class="top">
     <div class="brand">
-      <span class="eyebrow">Imóveis retomados · Caixa e leilões de bancos</span>
+      <span class="eyebrow">Imóveis retomados · Brasil, EUA e Portugal</span>
       <h1>Radar Retomados</h1>
-      <p>Reúne imóveis retomados à venda (leilões de Santander, Itaú, Bradesco e outros, mais a lista da Caixa), calcula um score de oportunidade para cada um e mostra primeiro o que merece análise.</p>
+      <p>Reúne imóveis retomados e de leilão no Brasil, na Flórida (EUA) e em Portugal, calcula um score de oportunidade para cada um e mostra primeiro o que merece análise. Valores no exterior com conversão aproximada para reais.</p>
     </div>
     <div class="actions">
-      <label class="btn primary" for="file">Carregar lista da Caixa (.csv)</label>
+      <label class="btn" for="file" id="btnCaixa">Somar lista da Caixa (.csv)</label>
       <input type="file" id="file" accept=".csv,text/csv" hidden>
-      <a class="btn" href="https://venda-imoveis.caixa.gov.br/sistema/download-lista.asp" target="_blank" rel="noopener">Baixar lista no site da Caixa</a>
-      <a class="btn" href="convite.html">Quero testar</a>
+      <a class="btn primary" href="convite.html">Quero testar</a>
     </div>
   </header>
+
+  <nav class="paises" aria-label="País">
+    <button class="pais" type="button" data-pais="BR" aria-pressed="true">Brasil <small id="nBR">–</small></button>
+    <button class="pais" type="button" data-pais="US" aria-pressed="false">EUA · Flórida <small id="nUS">–</small></button>
+    <button class="pais" type="button" data-pais="PT" aria-pressed="false">Portugal <small id="nPT">–</small></button>
+  </nav>
 
   <div id="msg"></div>
 
@@ -151,16 +159,16 @@ button,select,input{font:inherit;color:inherit}
 
   <div class="main">
     <aside class="filters" aria-label="Filtros">
-      <div class="f"><label for="fUF">Estado</label><select id="fUF"></select></div>
+      <div class="f" id="boxUF"><label for="fUF">Estado</label><select id="fUF"></select></div>
       <div class="f"><label for="fCidade">Cidade</label><select id="fCidade"></select></div>
       <div class="f"><label for="fBanco">Vendedor</label><select id="fBanco"></select></div>
       <div class="f"><label for="fTipo">Tipo</label><select id="fTipo"></select></div>
       <div class="f"><label for="fModal">Modalidade</label><select id="fModal"></select></div>
       <div class="f"><label for="fDesc">Desconto mínimo</label><input type="range" id="fDesc" min="0" max="80" step="5" value="0"><span class="rangeval" id="fDescV">0%</span></div>
-      <div class="f"><label for="fPreco">Preço máximo (R$)</label><input type="number" id="fPreco" min="0" step="10000" placeholder="Sem limite"></div>
+      <div class="f"><label for="fPreco" id="lblPreco">Preço máximo (R$)</label><input type="number" id="fPreco" min="0" step="10000" placeholder="Sem limite"></div>
       <div class="f"><label for="fScore">Score mínimo</label><input type="range" id="fScore" min="0" max="90" step="5" value="0"><span class="rangeval" id="fScoreV">0</span></div>
       <label class="check"><input type="checkbox" id="fOcup"> Só desocupados</label>
-      <label class="check"><input type="checkbox" id="fFin"> Só com financiamento (Caixa)</label>
+      <label class="check" id="boxFin"><input type="checkbox" id="fFin"> Só com financiamento (Caixa)</label>
       <button class="reset" id="reset" type="button">Limpar filtros</button>
     </aside>
 
@@ -172,7 +180,7 @@ button,select,input{font:inherit;color:inherit}
             <option value="score">Score</option>
             <option value="desconto">Maior desconto</option>
             <option value="preco">Menor preço</option>
-            <option value="lucro">Maior diferença p/ avaliação</option>
+            <option value="lucro">Maior diferença p/ referência</option>
           </select>
         </label>
       </div>
@@ -182,8 +190,9 @@ button,select,input{font:inherit;color:inherit}
   </div>
 
   <footer class="foot">
-    <span><b>Como o score funciona:</b> desconto (até 40 pts: sobre a avaliação na Caixa, ou do último leilão sobre o 1º nas leiloeiras), preço do m² comparado à mediana do mesmo tipo de imóvel na cidade (25), financiamento na Caixa ou ocupação nos leilões (15), modalidade de venda (10) e liquidez do tipo de imóvel (10).</span>
-    <span>O score é um filtro para priorizar análise. Não substitui a leitura da matrícula, do edital e a verificação de ocupação e débitos.</span>
+    <span><b>Como o score funciona:</b> desconto sobre o valor de referência de cada fonte (até 40 pts), preço do m² comparado à mediana do mesmo tipo de imóvel na cidade (25), ocupação ou financiamento (15), modalidade de venda (10) e liquidez do tipo de imóvel (10). A nota compara imóveis dentro do mesmo país.</span>
+    <span><b>Fontes:</b> Mega Leilões (Brasil), Hubzu (EUA, Flórida) e Leilosoc (Portugal), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência do Banco Central Europeu. <span class="fx" id="fxInfo"></span></span>
+    <span>O score é um filtro para priorizar análise. Não substitui a leitura do edital, da matrícula ou do registo predial, nem a orientação de um advogado no país do imóvel.</span>
   </footer>
 </div>
 
@@ -310,13 +319,23 @@ function parseCaixaCSV(text) {
 // Linha coletada de leiloeira (tabela radar_imoveis) -> formato do radar
 function fromLeilao(x) {
   const pr = x.n_pracas === 1 ? "praça única" : (x.n_pracas ? x.n_pracas + " praças" : "");
+  const v1 = x.valor_1 != null ? +x.valor_1 : null, v2 = x.valor_2 != null ? +x.valor_2 : null, va = +x.valor_atual;
+  const LABEL = { mega: "Valor do 1º leilão", hubzu: "Preço de lista", leilosoc: "Valor base" };
+  const PRECO = { mega: "Lance mínimo atual", hubzu: "Lance atual", leilosoc: v2 ? "Valor mínimo de venda" : "Lance inicial" };
+  // Mega: 1º leilão ainda não aconteceu -> preço atual é o do 1º; o desconto só vale no 2º
+  let proximo = null;
+  if (x.fonte === "mega" && v1 && v2 && v2 < v1 && va >= v1 * 0.999) proximo = { valor: v2, data: x.data_2 || null };
   return {
-    id: x.lote, fonte: x.fonte, uf: x.uf || "", cidade: x.cidade || "", bairro: x.bairro || "",
-    endereco: x.endereco || "", preco: +x.valor_atual, avaliacao: x.valor_2 && x.valor_1 ? +x.valor_1 : null,
-    refLabel: "Valor do 1º leilão", desconto: x.desconto_pct != null ? +x.desconto_pct : null,
-    financiamento: null, descricao: x.titulo, modalidade: [x.natureza, pr].filter(Boolean).join(", "),
-    link: x.link, tipo: x.tipo || "Outro", area: x.area_m2 ? +x.area_m2 : NaN, quartos: null, vagas: null,
-    comitente: x.comitente || null, ocupacao: x.ocupacao || null, dataLeilao: x.data_2 || x.data_1 || null,
+    id: x.lote, fonte: x.fonte, pais: x.pais || "BR", moeda: x.moeda || "BRL",
+    uf: x.uf || "", cidade: x.cidade || "", bairro: x.bairro || "",
+    endereco: x.endereco || "", preco: va, avaliacao: (x.fonte === "mega" ? (v2 && v1) : v1) ? v1 : null,
+    refLabel: LABEL[x.fonte] || "Valor de referência", precoLabel: PRECO[x.fonte] || "Preço",
+    desconto: x.desconto_pct != null ? +x.desconto_pct : null, proximo,
+    financiamento: null, descricao: x.titulo, modalidade: [x.natureza, x.fonte === "mega" ? pr : ""].filter(Boolean).join(", "),
+    link: x.link, tipo: x.tipo || "Outro", area: x.area_m2 ? +x.area_m2 : NaN,
+    quartos: x.quartos != null ? +x.quartos : null, vagas: null, fracao: !!x.fracao,
+    comitente: x.comitente || null, ocupacao: x.ocupacao || null,
+    dataLeilao: proximo && x.data_1 ? x.data_1 : (x.data_2 || x.data_1 || null),
     inconsistente: !!x.inconsistente
   };
 }
@@ -350,7 +369,7 @@ function scoreAll(rows) {
   const groups = {};
   for (const r of rows) {
     r.pm2 = (r.area > 10) ? r.preco / r.area : null;
-    const k = r.uf + "|" + r.cidade + "|" + r.tipo;
+    const k = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
     (groups[k] = groups[k] || []).push(r.pm2);
   }
   const med = {};
@@ -360,9 +379,10 @@ function scoreAll(rows) {
     const d = r.desconto ?? 0;
     const pDesc = Math.min(40, (d / 60) * 40);
     parts.push({ nome: r.fonte && r.fonte !== "caixa" ? "Desconto sobre o 1º leilão" : "Desconto sobre a avaliação", pts: pDesc, max: 40, nota: r.desconto == null ? (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado") : d.toFixed(1).replace(".", ",") + "% abaixo" });
-    const m = med[r.uf + "|" + r.cidade + "|" + r.tipo];
+    const gk = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
+    const m = med[gk];
     let pM2 = 10, notaM2 = "sem área para comparar";
-    if (r.pm2 && isFinite(m) && groups[r.uf + "|" + r.cidade + "|" + r.tipo].filter(x => x).length >= 3) {
+    if (r.pm2 && isFinite(m) && groups[gk].filter(x => x).length >= 3) {
       const rel = r.pm2 / m;
       pM2 = Math.max(0, Math.min(25, (1.4 - rel) / 0.8 * 25));
       notaM2 = Math.round((1 - rel) * 100) + "% vs. mediana da cidade";
@@ -370,8 +390,8 @@ function scoreAll(rows) {
     }
     parts.push({ nome: "Preço do m² na cidade", pts: pM2, max: 25, nota: notaM2 });
     if (r.fonte && r.fonte !== "caixa") {
-      const pOc = r.ocupacao === "desocupado" ? 15 : 5;
-      parts.push({ nome: "Ocupação", pts: pOc, max: 15, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : "não informada: verificar no edital" });
+      const pOc = r.ocupacao === "desocupado" ? 15 : (r.ocupacao === "ocupado" ? 0 : 5);
+      parts.push({ nome: "Ocupação", pts: pOc, max: 15, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : (r.ocupacao === "ocupado" ? "anunciado como ocupado" : "não informada: verificar no edital") });
     } else {
       const pFin = r.financiamento === true ? 15 : (r.financiamento === null ? 7 : 0);
       parts.push({ nome: "Aceita financiamento", pts: pFin, max: 15, nota: r.financiamento === true ? "sim" : r.financiamento === false ? "não, só à vista" : "não informado" });
@@ -381,7 +401,8 @@ function scoreAll(rows) {
     let pLiq = 4;
     if (r.tipo === "Apartamento" || r.tipo === "Casa") pLiq = (r.quartos >= 2 ? 10 : 7);
     else if (r.tipo === "Comercial") pLiq = 6;
-    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq, max: 10, nota: r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
+    if (r.fracao) pLiq = 1;
+    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq, max: 10, nota: r.fracao ? "só uma fração do imóvel está à venda" : r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
     r.parts = parts;
     r.score = Math.round(parts.reduce((s, p) => s + p.pts, 0));
     r.lucroBruto = r.avaliacao ? r.avaliacao - r.preco : null;
@@ -394,118 +415,99 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
 
 </script>
 <script>
-// Linhas de EXEMPLO no formato da lista da Caixa. Não são imóveis reais.
-const SAMPLE_CSV = [
-" Lista de Imóveis da Caixa (EXEMPLO)",
-" N° do imóvel;UF;Cidade;Bairro;Endereço;Preço;Valor de avaliação;Desconto;Financiamento;Descrição;Modalidade de venda;Link de acesso",
-"EXEMPLO-01;SP;CAMPINAS;JARDIM DO LAGO;RUA EXEMPLO, 120 APTO 31;168.400,00;305.000,00;44.79;Sim;Apartamento, 68.20 de área total, 52.10 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;",
-"EXEMPLO-02;SP;CAMPINAS;CAMBUÍ;AV EXEMPLO, 900 APTO 82;412.000,00;560.000,00;26.43;Sim;Apartamento, 98.00 de área total, 74.30 de área privativa, 0.00 de área do terreno, 3 qto(s), 2 vaga(s) de garagem.;Licitação Aberta;",
-"EXEMPLO-03;SP;CAMPINAS;VILA INDUSTRIAL;RUA EXEMPLO, 45;139.000,00;171.000,00;18.71;Não;Apartamento, 55.00 de área total, 44.00 de área privativa, 0.00 de área do terreno, 2 qto(s);Leilão SFI - Edital Único;",
-"EXEMPLO-04;SP;CAMPINAS;PARQUE ITAJAÍ;RUA EXEMPLO, 300;121.500,00;232.000,00;47.63;Sim;Apartamento, 49.00 de área total, 41.20 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;",
-"EXEMPLO-05;SP;CAMPINAS;BARÃO GERALDO;RUA EXEMPLO, 18;385.000,00;470.000,00;18.09;Sim;Casa, 180.00 de área total, 142.00 de área privativa, 250.00 de área do terreno, 3 qto(s), 2 vaga(s) de garagem.;Licitação Aberta;",
-"EXEMPLO-06;SP;SAO PAULO;ITAQUERA;RUA EXEMPLO, 77 APTO 12;176.300,00;268.000,00;34.22;Sim;Apartamento, 52.00 de área total, 43.50 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;",
-"EXEMPLO-07;SP;SAO PAULO;VILA MARIANA;RUA EXEMPLO, 1500 APTO 44;598.000,00;720.000,00;16.94;Sim;Apartamento, 92.00 de área total, 70.00 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;2º Leilão SFI;",
-"EXEMPLO-08;SP;SAO PAULO;GUAIANASES;RUA EXEMPLO, 210;98.600,00;189.000,00;47.83;Não;Apartamento, 46.00 de área total, 39.80 de área privativa, 0.00 de área do terreno, 2 qto(s);Venda Direta Online;",
-"EXEMPLO-09;SP;SAO PAULO;SANTANA;RUA EXEMPLO, 64 APTO 101;402.000,00;455.000,00;11.65;Sim;Apartamento, 78.00 de área total, 63.00 de área privativa, 0.00 de área do terreno, 3 qto(s), 1 vaga(s) de garagem.;Licitação Aberta;",
-"EXEMPLO-10;SP;SAO PAULO;CIDADE TIRADENTES;RUA EXEMPLO, 9;112.000,00;150.000,00;25.33;Sim;Apartamento, 48.00 de área total, 42.00 de área privativa, 0.00 de área do terreno, 2 qto(s);Leilão SFI - Edital Único;",
-"EXEMPLO-11;SP;SAO PAULO;MOOCA;RUA EXEMPLO, 330;690.000,00;1.050.000,00;34.29;Não;Comercial, 260.00 de área total, 210.00 de área privativa, 300.00 de área do terreno.;Licitação Aberta;",
-"EXEMPLO-12;SP;RIBEIRAO PRETO;JARDIM BOTÂNICO;RUA EXEMPLO, 55;254.000,00;398.000,00;36.18;Sim;Casa, 150.00 de área total, 118.00 de área privativa, 220.00 de área do terreno, 3 qto(s), 2 vaga(s) de garagem.;Venda Direta Online;",
-"EXEMPLO-13;SP;RIBEIRAO PRETO;IPIRANGA;RUA EXEMPLO, 840;131.000,00;164.000,00;20.12;Sim;Casa, 90.00 de área total, 70.00 de área privativa, 150.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Leilão SFI - Edital Único;",
-"EXEMPLO-14;SP;RIBEIRAO PRETO;VILA VIRGÍNIA;RUA EXEMPLO, 12;142.500,00;195.000,00;26.92;Sim;Casa, 100.00 de área total, 82.00 de área privativa, 160.00 de área do terreno, 2 qto(s), 2 vaga(s) de garagem.;Licitação Aberta;",
-"EXEMPLO-15;SP;SOROCABA;ÉDEN;RUA EXEMPLO, 400;74.000,00;95.000,00;22.11;Sim;Terreno, 0.00 de área total, 0.00 de área privativa, 250.00 de área do terreno.;Venda Direta Online;",
-"EXEMPLO-16;SP;SOROCABA;CAMPOLIM;RUA EXEMPLO, 1100 APTO 63;219.000,00;365.000,00;40.00;Sim;Apartamento, 72.00 de área total, 60.00 de área privativa, 0.00 de área do terreno, 2 qto(s), 1 vaga(s) de garagem.;Venda Direta Online;"
-].join("\n");
 
 </script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
-  const brl = v => v == null || !isFinite(v) ? "–" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const MOEDA = { BRL: "R$", USD: "US$", EUR: "€" };
+  const money = (v, m = "BRL") => v == null || !isFinite(v) ? "–" : v.toLocaleString("pt-BR", { style: "currency", currency: m, maximumFractionDigits: 0 });
   const pct = v => v == null || !isFinite(v) ? "–" : v.toFixed(1).replace(".", ",") + "%";
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const tier = s => s >= 70 ? "s-good" : s >= 50 ? "s-mid" : "s-low";
+  const fmtData = d => { const t = new Date(d); return isNaN(t) ? "" : t.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }); };
+  const fmtDataHora = d => { const t = new Date(d); return isNaN(t) ? "–" : t.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }); };
 
-  let ALL = [], source = { kind: "sample", label: "" }, shown = 30;
-  let LEILAO = [], CAIXA = [], leilaoInfo = null, apiFim = false;
-  const vendedor = r => r.fonte === "caixa" ? "Caixa" : (r.comitente || "Sem banco (judicial e outros)");
-  function rebuild() {
-    const rows = [...LEILAO, ...CAIXA];
-    if (!rows.length) { load(parseCaixaCSV(SAMPLE_CSV).map(r => ({ ...r, fonte: "caixa" })), { kind: "sample" }); return; }
-    const parts = [];
-    if (LEILAO.length) parts.push(`${LEILAO.length.toLocaleString("pt-BR")} de leilões (${leilaoInfo})`);
-    if (CAIXA.length) parts.push(`${CAIXA.length.toLocaleString("pt-BR")} da Caixa (${source.caixaFile || "arquivo enviado"})`);
-    load(rows.map(r => ({ ...r })), { kind: "file", label: parts.join(" + ") });
-  }
   const STORE = "radar-retomados-filtros";
+  const PAISES = { BR: "Brasil", US: "EUA", PT: "Portugal" };
+  const HASH = { brasil: "BR", eua: "US", portugal: "PT" };
+  let TODOS = [], ALL = [], LEILAO = [], CAIXA = [], FX = {}, PAIS = "BR", shown = 30, estado = "loading", erroTxt = "", atualizado = "", caixaFile = "";
 
-  function load(rows, src) {
-    ALL = scoreAll(rows); source = src; shown = 30;
-    fillSelect($("fUF"), "Todos os estados", uniq(ALL.map(r => r.uf).filter(Boolean)));
+  const conv = (v, m) => m !== "BRL" && FX[m] && v ? "≈ " + money(v * FX[m], "BRL") : "";
+  const vendedor = r => r.fonte === "caixa" ? "Caixa" : (r.comitente || "Sem banco (judicial e outros)");
+
+  function rebuild() {
+    TODOS = scoreAll([...LEILAO, ...CAIXA].map(r => ({ ...r })));
+    for (const p of Object.keys(PAISES)) $("n" + p).textContent = TODOS.filter(r => r.pais === p).length.toLocaleString("pt-BR");
+    trocarPais(PAIS, false);
+  }
+
+  function trocarPais(p, limpar = true) {
+    PAIS = p;
+    document.querySelectorAll(".pais").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pais === p)));
+    try { history.replaceState(null, "", p === "BR" ? location.pathname : "#" + Object.keys(HASH).find(k => HASH[k] === p)); } catch (e) {}
+    ALL = TODOS.filter(r => r.pais === p);
+    shown = 30;
+    if (limpar) { $("fUF").value = $("fCidade").value = $("fBanco").value = $("fTipo").value = $("fModal").value = ""; $("fPreco").value = ""; $("fOcup").checked = false; $("fFin").checked = false; }
+    const ufs = uniq(ALL.map(r => r.uf).filter(Boolean));
+    $("boxUF").hidden = ufs.length < 2;
+    fillSelect($("fUF"), "Todos os estados", ufs);
     fillCidades();
     fillSelect($("fBanco"), "Todos os vendedores", uniq(ALL.map(vendedor)));
     fillSelect($("fTipo"), "Todos os tipos", uniq(ALL.map(r => r.tipo)));
     fillSelect($("fModal"), "Todas", uniq(ALL.map(r => r.modalidade).filter(Boolean)));
-    restoreFilters();
+    $("lblPreco").textContent = `Preço máximo (${MOEDA[{ BR: "BRL", US: "USD", PT: "EUR" }[p]]})`;
+    $("boxFin").hidden = p !== "BR";
+    $("btnCaixa").hidden = p !== "BR";
     renderMsg(); render();
   }
-  // cidades da UF escolhida (ou de todas); mantém a cidade se ela ainda existir na lista
+
   function fillCidades() {
     const uf = $("fUF").value, el = $("fCidade"), atual = el.value;
     const base = uf ? ALL.filter(r => r.uf === uf) : ALL;
-    const opts = uniq(base.map(r => r.cidade + (multiUF() ? " / " + r.uf : "")));
+    const multi = new Set(ALL.map(r => r.uf)).size > 1;
+    const opts = uniq(base.map(r => r.cidade + (multi && r.uf ? " / " + r.uf : "")));
     fillSelect(el, uf ? `Todas as cidades de ${uf}` : "Todas as cidades", opts);
     if (opts.includes(atual)) el.value = atual;
   }
-  const multiUF = () => new Set(ALL.map(r => r.uf)).size > 1;
-  const uniq = a => [...new Set(a)].sort((x, y) => x.localeCompare(y, "pt-BR"));
+  const rotCidade = r => r.cidade + (new Set(ALL.map(x => x.uf)).size > 1 && r.uf ? " / " + r.uf : "");
+  const uniq = a => [...new Set(a)].sort((x, y) => String(x).localeCompare(String(y), "pt-BR"));
   function fillSelect(el, all, opts) {
     el.innerHTML = `<option value="">${all}</option>` + opts.map(o => `<option>${esc(o)}</option>`).join("");
   }
 
   function renderMsg() {
     const m = $("msg");
-    if (source.kind === "sample" && !apiFim) {
-      m.innerHTML = `<div class="notice"><span><strong>Carregando os imóveis dos leilões…</strong> Enquanto isso, veja os exemplos abaixo.</span></div>`;
-    } else if (source.kind === "sample") {
-      m.innerHTML = `<div class="notice"><span><strong>Dados de exemplo.</strong> Estes 16 imóveis são fictícios, só para mostrar como o radar funciona. Baixe a lista oficial do seu estado no site da Caixa e carregue o arquivo aqui (ou arraste para esta página). Nada sai do seu navegador.</span></div>`;
-    } else if (source.kind === "error") {
-      m.innerHTML = `<div class="notice error"><span><strong>Não consegui ler o arquivo.</strong> ${esc(source.label)}</span></div>`;
-    } else {
-      m.innerHTML = `<div class="source">Fontes: <b>${esc(source.label)}</b>. Para somar a Caixa, carregue o CSV oficial do seu estado.</div>`;
+    if (estado === "loading") m.innerHTML = `<div class="notice"><span><strong>Carregando os imóveis…</strong></span></div>`;
+    else if (estado === "error") m.innerHTML = `<div class="notice error"><span><strong>Não foi possível carregar.</strong> ${esc(erroTxt)}</span></div>`;
+    else {
+      const fonte = { BR: "Mega Leilões" + (CAIXA.length ? ` + Caixa (${caixaFile})` : ""), US: "Hubzu · imóveis retomados por bancos na Flórida", PT: "Leilosoc · leilões em Portugal" }[PAIS];
+      const extra = PAIS === "PT" ? " Portugal ainda tem poucas fontes abertas: a lista vai crescer com novas leiloeiras." : "";
+      m.innerHTML = `<div class="source">Fonte: <b>${esc(fonte)}</b>, atualizado em ${esc(atualizado)}.${extra}</div>`;
     }
   }
 
   function filtered() {
     const uf = $("fUF").value, c = $("fCidade").value, t = $("fTipo").value, mo = $("fModal").value, bn = $("fBanco").value, oc = $("fOcup").checked;
     const d = +$("fDesc").value, p = +$("fPreco").value || Infinity, s = +$("fScore").value, f = $("fFin").checked;
-    let r = ALL.filter(x =>
-      (!uf || x.uf === uf) && (!c || (x.cidade + (multiUF() ? " / " + x.uf : "")) === c) && (!bn || vendedor(x) === bn) && (!oc || x.ocupacao === "desocupado") && (!t || x.tipo === t) && (!mo || x.modalidade === mo) &&
-      (x.desconto ?? 0) >= d && x.preco <= p && x.score >= s && (!f || x.financiamento === true));
-    const k = $("sort").value;
-    const by = {
-      score: (a, b) => b.score - a.score,
-      desconto: (a, b) => (b.desconto ?? 0) - (a.desconto ?? 0),
-      preco: (a, b) => a.preco - b.preco,
-      lucro: (a, b) => (b.lucroBruto ?? 0) - (a.lucroBruto ?? 0)
-    }[k];
+    const r = ALL.filter(x => (!uf || x.uf === uf) && (!c || rotCidade(x) === c) && (!bn || vendedor(x) === bn) && (!oc || x.ocupacao === "desocupado") &&
+      (!t || x.tipo === t) && (!mo || x.modalidade === mo) && (x.desconto ?? 0) >= d && x.preco <= p && x.score >= s && (!f || x.financiamento === true));
+    const by = { score: (a, b) => b.score - a.score, desconto: (a, b) => (b.desconto ?? 0) - (a.desconto ?? 0), preco: (a, b) => a.preco - b.preco, lucro: (a, b) => (b.lucroBruto ?? 0) - (a.lucroBruto ?? 0) }[$("sort").value];
     return r.slice().sort(by);
   }
 
   function render() {
     const r = filtered();
-    const base = r;
-    const descs = base.map(x => x.desconto).filter(x => x != null);
-    const fin = base.filter(x => x.financiamento === true).length;
-    const top = base.filter(x => x.score >= 70).length;
+    const descs = r.map(x => x.desconto).filter(x => x != null);
     $("kpis").innerHTML = [
-      [base.length.toLocaleString("pt-BR"), "imóveis no filtro"],
+      [r.length.toLocaleString("pt-BR"), "imóveis no filtro"],
       [descs.length ? pct(descs.reduce((a, b) => a + b, 0) / descs.length) : "–", "desconto médio"],
-      [base.filter(x => x.ocupacao === "desocupado").length.toLocaleString("pt-BR"), "anunciados como desocupados"],
-      [top.toLocaleString("pt-BR"), "com score 70 ou mais"]
+      [r.filter(x => x.ocupacao === "desocupado").length.toLocaleString("pt-BR"), "anunciados como desocupados"],
+      [r.filter(x => x.score >= 70).length.toLocaleString("pt-BR"), "com score 70 ou mais"]
     ].map(([v, l]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span></div>`).join("");
-    $("count").textContent = r.length === ALL.length ? `${r.length} de ${ALL.length}` : `${r.length} de ${ALL.length} após filtros`;
+    $("count").textContent = ALL.length ? (r.length === ALL.length ? ` ${r.length} de ${ALL.length}` : ` ${r.length} de ${ALL.length} após filtros`) : "";
     $("rows").innerHTML = r.length ? r.slice(0, shown).map(rowHTML).join("") :
-      `<div class="empty">Nenhum imóvel com esses filtros. Reduza o desconto mínimo ou o score mínimo.</div>`;
+      `<div class="empty">${ALL.length ? "Nenhum imóvel com esses filtros. Reduza o desconto mínimo ou o score mínimo." : (estado === "loading" ? "Carregando…" : "Nenhum imóvel deste país no momento.")}</div>`;
     $("more").hidden = r.length <= shown;
     $("fDescV").textContent = $("fDesc").value + "%";
     $("fScoreV").textContent = $("fScore").value;
@@ -513,51 +515,67 @@ const SAMPLE_CSV = [
   }
 
   function rowHTML(x) {
-    const i = ALL.indexOf(x);
+    const i = TODOS.indexOf(x);
     const area = x.area ? Math.round(x.area) + " m²" : null;
-    const meta = [x.bairro, x.cidade + " / " + x.uf].filter(Boolean).join(" · ");
+    const meta = [x.bairro, x.cidade + (x.uf ? " / " + x.uf : "")].filter(Boolean).join(" · ");
+    const chips = [
+      `<span class="chip">${esc(vendedor(x))}</span>`,
+      x.fracao ? '<span class="chip warn">Fração do imóvel</span>' : "",
+      x.ocupacao === "desocupado" ? '<span class="chip fin">Desocupado</span>' : (x.ocupacao === "ocupado" ? '<span class="chip warn">Ocupado</span>' : ""),
+      x.financiamento ? '<span class="chip fin">Financiamento</span>' : "",
+      x.dataLeilao ? `<span class="chip">${x.pais === "BR" ? "Leilão" : "Termina"} ${fmtData(x.dataLeilao)}</span>` : "",
+      x.relM2 && x.relM2 < .85 ? `<span class="chip">m² ${Math.round((1 - x.relM2) * 100)}% abaixo</span>` : ""
+    ].join("");
+    const desc = x.desconto != null ? `<span class="d">−${pct(x.desconto)}${x.proximo ? " no 2º" : ""}</span>` : "";
     return `<button class="row" data-i="${i}" type="button">
       <span class="badge ${tier(x.score)}" aria-label="Score ${x.score}">${x.score}</span>
       <span class="rinfo">
         <span class="rtitle">${esc(x.tipo)}${x.quartos ? `, ${x.quartos} quarto(s)` : ""}${area ? ` · ${area}` : ""}</span>
         <span class="rmeta">${esc(meta)}</span>
-        <span class="chips"><span class="chip">${esc(vendedor(x))}</span>${x.ocupacao === "desocupado" ? '<span class="chip fin">Desocupado</span>' : ""}${x.financiamento ? '<span class="chip fin">Financiamento</span>' : ""}${x.dataLeilao ? `<span class="chip">Leilão ${fmtData(x.dataLeilao)}</span>` : ""}<span class="chip">${esc(shortMod(x.modalidade))}</span>${x.relM2 && x.relM2 < .85 ? `<span class="chip">m² ${Math.round((1 - x.relM2) * 100)}% abaixo</span>` : ""}</span>
+        <span class="chips">${chips}</span>
       </span>
-      <span class="rprice"><span class="p">${brl(x.preco)}</span>${x.desconto != null ? `<span class="d">−${pct(x.desconto)}</span>` : ""}${x.avaliacao ? `<span class="a">${brl(x.avaliacao)}</span>` : ""}</span>
+      <span class="rprice"><span class="p">${money(x.preco, x.moeda)}</span>${conv(x.preco, x.moeda) ? `<span class="conv">${conv(x.preco, x.moeda)}</span>` : ""}${desc}${x.avaliacao && !x.proximo ? `<span class="a">${money(x.avaliacao, x.moeda)}</span>` : ""}</span>
     </button>`;
   }
-  const fmtData = d => { const t = new Date(d); return isNaN(t) ? "" : t.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }); };
-  const shortMod = m => (m || "Modalidade não informada").replace(/ - Edital Único/i, "");
+
+  const CHECK = {
+    BR: ["Ler a matrícula atualizada: ônus, penhoras e averbações", "Ler o edital: quem paga condomínio, IPTU e despesas de desocupação", "Confirmar se o imóvel está ocupado e estimar prazo e custo de desocupação", "Somar ITBI, registro, reforma e comissão do leiloeiro ao preço", "Comparar com anúncios de imóveis parecidos no mesmo bairro"],
+    US: ["Pesquisar o título do imóvel (title search) e dívidas que ficam com o comprador", "Somar buyer's premium, custos de fechamento e impostos anuais (property tax)", "O imóvel é vendido no estado em que se encontra (as is): inspecione antes", "Definir como comprar (pessoa física ou empresa) com advogado e contador nos EUA", "Prever o imposto na revenda para estrangeiros (FIRPTA)"],
+    PT: ["Pedir a certidão permanente do registo predial e verificar ónus", "Somar IMT, Imposto do Selo e IMI ao preço", "Ler as condições do leilão: caução, prazos e forma de pagamento", "Ter NIF português para poder comprar", "Se for fração do imóvel, entender os direitos dos outros proprietários"]
+  };
 
   function openDetail(x) {
     const d = $("detail");
     const link = x.link && /^https?:\/\//.test(x.link) ? x.link : null;
+    const avisos = [
+      x.proximo ? `Este é o valor do 1º leilão, em ${fmtDataHora(x.dataLeilao)}. Se não houver lance, o 2º leilão começa em <b>${money(x.proximo.valor, x.moeda)}</b>${x.proximo.data ? ` em ${fmtDataHora(x.proximo.data)}` : ""}.` : "",
+      x.fonte === "leilosoc" && x.precoLabel === "Lance inicial" ? "Valor de lance inicial. O vendedor pode exigir um valor mínimo maior para fechar a venda: confirme nas condições do leilão." : "",
+      x.fracao ? "Só uma parte (fração) do imóvel está à venda. Avalie com um advogado como funciona a copropriedade." : "",
+      x.inconsistente ? "O último leilão tem valor mínimo acima do 1º. Isso acontece quando a dívida supera a avaliação. Confira no edital." : "",
+      x.moeda !== "BRL" && FX[x.moeda] ? `Conversão aproximada pelo câmbio de referência: 1 ${MOEDA[x.moeda]} = ${money(FX[x.moeda] * 100, "BRL").replace(/\s/g, " ")} a cada 100. Use a cotação do seu banco para decidir.` : ""
+    ].filter(Boolean).map(t => `<div class="alerta">${t}</div>`).join("");
     d.innerHTML = `<div class="scrim" data-close="1"></div>
     <aside class="panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
-      <div class="ptop"><div><span class="eyebrow">Imóvel ${esc(x.id || "")}</span>
+      <div class="ptop"><div><span class="eyebrow">${PAISES[x.pais]} · lote ${esc(x.id || "")}</span>
         <h2 id="dTitle">${esc(x.tipo)}${x.quartos ? `, ${x.quartos} quarto(s)` : ""} em ${esc(x.bairro || x.cidade)}</h2>
-        <div class="addr">${esc(x.endereco)} · ${esc(x.cidade)} / ${esc(x.uf)}</div></div>
+        <div class="addr">${x.endereco ? esc(x.endereco) + " · " : ""}${esc(x.cidade)}${x.uf ? " / " + esc(x.uf) : ""}</div></div>
         <button class="close" data-close="1" type="button" aria-label="Fechar">×</button></div>
       <div class="scorebox"><span class="badge big ${tier(x.score)}">${x.score}</span>
         <div class="bars">${x.parts.map(p => `<div class="bar"><div class="t"><span>${p.nome}</span><span>${Math.round(p.pts)}/${p.max}</span></div>
           <div class="track"><div class="fill" style="width:${(p.pts / p.max * 100).toFixed(0)}%"></div></div><span class="n">${esc(p.nota)}</span></div>`).join("")}</div></div>
+      ${avisos}
       <div class="facts">
-        <div class="fact"><span class="k">Preço de venda</span><span class="v">${brl(x.preco)}</span></div>
-        <div class="fact"><span class="k">${esc(x.refLabel || "Valor de avaliação")}</span><span class="v">${brl(x.avaliacao)}</span></div>
-        <div class="fact"><span class="k">Diferença bruta</span><span class="v">${brl(x.lucroBruto)}</span></div>
+        <div class="fact"><span class="k">${esc(x.precoLabel || "Preço")}</span><span class="v">${money(x.preco, x.moeda)}</span>${conv(x.preco, x.moeda) ? `<span class="conv">${conv(x.preco, x.moeda)}</span>` : ""}</div>
+        <div class="fact"><span class="k">${esc(x.refLabel || "Valor de referência")}</span><span class="v">${money(x.avaliacao, x.moeda)}</span></div>
+        <div class="fact"><span class="k">Desconto${x.proximo ? " no 2º leilão" : ""}</span><span class="v">${pct(x.desconto)}</span></div>
         <div class="fact"><span class="k">Vendedor</span><span class="v">${esc(vendedor(x))}</span></div>
-        <div class="fact"><span class="k">Próximo leilão</span><span class="v">${x.dataLeilao ? new Date(x.dataLeilao).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }) : "–"}</span></div>
-        <div class="fact"><span class="k">Desconto</span><span class="v">${pct(x.desconto)}</span></div>
-        <div class="fact"><span class="k">Área considerada</span><span class="v">${x.area ? x.area.toLocaleString("pt-BR") + " m²" : "–"}</span></div>
-        <div class="fact"><span class="k">Preço por m²</span><span class="v">${brl(x.pm2)}</span></div>
+        <div class="fact"><span class="k">${x.pais === "BR" ? "Próximo leilão" : "Encerramento"}</span><span class="v">${x.dataLeilao ? fmtDataHora(x.dataLeilao) : "–"}</span></div>
+        <div class="fact"><span class="k">Ocupação</span><span class="v">${x.ocupacao === "desocupado" ? "Desocupado" : x.ocupacao === "ocupado" ? "Ocupado" : "Não informada"}</span></div>
+        <div class="fact"><span class="k">Área considerada</span><span class="v">${x.area ? Math.round(x.area).toLocaleString("pt-BR") + " m²" : "–"}</span></div>
+        <div class="fact"><span class="k">Preço por m²</span><span class="v">${money(x.pm2, x.moeda)}</span></div>
       </div>
-      <div class="desc">${esc(x.descricao)}<br>${esc(x.modalidade)}${x.inconsistente ? "<br><b>Atenção:</b> o último leilão tem valor mínimo acima do 1º. Isso acontece quando a dívida supera a avaliação. Confira no edital." : ""}</div>
-      <div class="todo"><h3>Antes de dar lance</h3><ul>
-        <li>Ler a matrícula atualizada: ônus, penhoras e averbações</li>
-        <li>Ler o edital: quem paga condomínio, IPTU e despesas de desocupação</li>
-        <li>Confirmar se o imóvel está ocupado e estimar prazo e custo de desocupação</li>
-        <li>Somar ITBI, registro, reforma e comissão ao preço para calcular o retorno real</li>
-        <li>Comparar com anúncios de imóveis parecidos no mesmo bairro</li></ul></div>
+      <div class="desc">${esc(x.descricao)}<br>${esc(x.modalidade)}</div>
+      <div class="todo"><h3>Antes de dar lance</h3><ul>${CHECK[x.pais].map(t => `<li>${t}</li>`).join("")}</ul></div>
       <div class="pactions">
         ${link ? `<a class="btn primary" href="${esc(link)}" target="_blank" rel="noopener">${x.fonte === "caixa" ? "Abrir no site da Caixa" : "Abrir no site do leiloeiro"}</a>` : ""}
         <button class="btn" type="button" id="copy">Copiar resumo para WhatsApp</button>
@@ -572,28 +590,25 @@ const SAMPLE_CSV = [
 
   function summary(x) {
     return `*Oportunidade Radar Retomados (score ${x.score}/100)*
-${x.tipo}${x.quartos ? `, ${x.quartos} quarto(s)` : ""}${x.area ? `, ${Math.round(x.area)} m²` : ""}
-${x.bairro ? x.bairro + ", " : ""}${x.cidade}/${x.uf}
-Preço: ${brl(x.preco)} | ${x.refLabel || "Avaliação"}: ${brl(x.avaliacao)} | Desconto: ${pct(x.desconto)}
-Vendedor: ${vendedor(x)} | ${x.modalidade}${x.ocupacao === "desocupado" ? " | Desocupado" : ""}${x.fonte === "caixa" ? ` | Financiamento: ${x.financiamento ? "sim" : x.financiamento === false ? "não" : "não informado"}` : ""}
+${PAISES[x.pais]} · ${x.tipo}${x.quartos ? `, ${x.quartos} quarto(s)` : ""}${x.area ? `, ${Math.round(x.area)} m²` : ""}
+${x.bairro ? x.bairro + ", " : ""}${x.cidade}${x.uf ? "/" + x.uf : ""}
+${x.precoLabel}: ${money(x.preco, x.moeda)}${conv(x.preco, x.moeda) ? " (" + conv(x.preco, x.moeda) + ")" : ""} | ${x.refLabel}: ${money(x.avaliacao, x.moeda)} | Desconto: ${pct(x.desconto)}${x.proximo ? " no 2º leilão" : ""}
+Vendedor: ${vendedor(x)} | ${x.modalidade}${x.ocupacao === "desocupado" ? " | Desocupado" : ""}${x.fracao ? " | Fração do imóvel" : ""}
 ${x.link || ""}`.trim();
   }
 
   function copyText(t, after) {
     const fallback = () => {
-      if (after.querySelector("textarea")) return;
+      if (after.parentNode.querySelector("textarea")) return;
       const ta = document.createElement("textarea");
       ta.className = "copyarea"; ta.value = t; ta.readOnly = true;
       after.after(ta); ta.focus(); ta.select();
       toast("Selecione e copie o texto abaixo");
     };
-    try {
-      navigator.clipboard.writeText(t).then(() => toast("Resumo copiado"), fallback);
-    } catch (e) { fallback(); }
+    try { navigator.clipboard.writeText(t).then(() => toast("Resumo copiado"), fallback); } catch (e) { fallback(); }
   }
   function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2200); }
 
-  // arquivo
   function readFile(f) {
     const fr = new FileReader();
     fr.onload = () => {
@@ -603,90 +618,54 @@ ${x.link || ""}`.trim();
       try {
         const rows = parseCaixaCSV(text);
         if (!rows.length) throw new Error("O arquivo foi lido, mas nenhuma linha tinha preço válido.");
-        CAIXA = rows.map(r => ({ ...r, fonte: "caixa" })); source.caixaFile = f.name; rebuild();
-      } catch (e) { source = { kind: "error", label: e.message }; renderMsg(); }
+        CAIXA = rows.map(r => ({ ...r, fonte: "caixa", pais: "BR", moeda: "BRL", precoLabel: "Preço de venda", refLabel: "Valor de avaliação" }));
+        caixaFile = f.name; PAIS = "BR"; rebuild();
+      } catch (e) { toast(e.message); }
     };
     fr.readAsArrayBuffer(f);
   }
   $("file").addEventListener("change", e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ""; });
-  document.addEventListener("dragover", e => { e.preventDefault(); document.body.classList.add("dragging"); });
-  document.addEventListener("dragleave", () => document.body.classList.remove("dragging"));
-  document.addEventListener("drop", e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) readFile(f); });
 
-  // filtros
+  document.querySelectorAll(".pais").forEach(b => b.addEventListener("click", () => trocarPais(b.dataset.pais)));
   $("fUF").addEventListener("input", fillCidades);
-  ["fUF", "fCidade", "fBanco", "fOcup", "fTipo", "fModal", "fDesc", "fPreco", "fScore", "fFin", "sort"].forEach(id =>
-    $(id).addEventListener("input", () => { shown = 30; render(); }));
-  $("reset").onclick = () => { $("fUF").value = $("fCidade").value = $("fBanco").value = $("fTipo").value = $("fModal").value = ""; fillCidades(); $("fOcup").checked = false; $("fDesc").value = 0; $("fPreco").value = ""; $("fScore").value = 0; $("fFin").checked = false; render(); };
+  ["fUF", "fCidade", "fBanco", "fOcup", "fTipo", "fModal", "fDesc", "fPreco", "fScore", "fFin", "sort"].forEach(id => $(id).addEventListener("input", () => { shown = 30; render(); }));
+  $("reset").onclick = () => { $("fDesc").value = 0; $("fScore").value = 0; trocarPais(PAIS, true); };
   $("more").onclick = () => { shown += 30; render(); };
-  $("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) openDetail(ALL[+b.dataset.i]); });
+  $("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) openDetail(TODOS[+b.dataset.i]); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("detail").hidden) closeDetail(); });
 
-  function saveFilters() {
-    try { localStorage.setItem(STORE, JSON.stringify({ d: $("fDesc").value, p: $("fPreco").value, s: $("fScore").value, f: $("fFin").checked, o: $("sort").value })); } catch (e) {}
-  }
-  function restoreFilters() {
-    try { const v = JSON.parse(localStorage.getItem(STORE) || "null"); if (!v) return;
-      $("fDesc").value = v.d; $("fPreco").value = v.p; $("fScore").value = v.s; $("fFin").checked = v.f; $("sort").value = v.o || "score"; } catch (e) {}
-  }
+  function saveFilters() { try { localStorage.setItem(STORE, JSON.stringify({ d: $("fDesc").value, s: $("fScore").value, o: $("sort").value })); } catch (e) {} }
+  try { const v = JSON.parse(localStorage.getItem(STORE) || "null"); if (v) { $("fDesc").value = v.d || 0; $("fScore").value = v.s || 0; $("sort").value = v.o || "score"; } } catch (e) {}
+  const h = (location.hash || "").replace("#", "");
+  if (HASH[h]) PAIS = HASH[h];
 
-  // início: dados publicados junto com a página, se existirem; senão, exemplo
-  // fonte de dados: um endereço de API (site publicado) ou o arquivo dados.json publicado junto
-  const API = window.RADAR_API || null;
-  rebuild();
+  // dados: API ao vivo; se falhar, a foto publicada junto com o site
+  const API = window.RADAR_API;
   async function lerAPI() {
     const rows = [];
     for (let off = 0; off < 20000; off += 1000) {
       const r = await fetch(`${API.url}&limit=1000&offset=${off}`, { headers: { apikey: API.key } });
-      if (!r.ok) throw new Error("HTTP " + r.status);
+      if (!r.ok) throw new Error("o servidor respondeu HTTP " + r.status + ". Tente recarregar a página.");
       const page = await r.json();
       rows.push(...page);
       if (page.length < 1000) break;
     }
-    const ultimo = rows.reduce((m, x) => x.visto_ultimo > m ? x.visto_ultimo : m, "");
-    return { rows, gerado_em: ultimo };
+    try {
+      const f = await fetch(API.fx, { headers: { apikey: API.key } });
+      if (f.ok) for (const c of await f.json()) FX[c.moeda] = +c.brl;
+    } catch (e) {}
+    return { rows, gerado_em: rows.reduce((m, x) => x.visto_ultimo > m ? x.visto_ultimo : m, "") };
   }
-  // Dentro do app Claude: lê o banco pelo conector Supabase de quem está vendo
-  const SQL = "select coalesce(json_agg(t), '[]'::json) as rows from (select lote,fonte,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,visto_ultimo from public.radar_imoveis where ativo order by id) t";
-  const MSG_MCP = {
-    server_not_connected: "Conecte o Supabase em Configurações → Conectores do claude.ai para ver os imóveis coletados.",
-    needs_reauth: "A conexão com o Supabase expirou. Reconecte em Configurações → Conectores do claude.ai.",
-    not_in_manifest: "O acesso ao Supabase não foi permitido para esta página.",
-    approval_required: "Esta página precisa da sua permissão para consultar o Supabase.",
-    selection_required: "Escolha qual conexão do Supabase usar no aviso do app."
-  };
-  async function lerMCP() {
-    const mcp = window.claude && window.claude.use ? await window.claude.use("mcp") : null;
-    if (!mcp) return null;
-    const res = await mcp.callTool("Supabase", "execute_sql", { project_id: "ryhyvzwqtktaaonznizn", query: SQL });
-    let txt = res.payload;
-    if (txt && typeof txt === "object" && !Array.isArray(txt)) txt = txt.result ?? JSON.stringify(txt);
-    if (typeof txt !== "string") txt = JSON.stringify(txt);
-    const m = txt.match(/<untrusted-data-[^>]+>\s*(\[[\s\S]*\])\s*<\/untrusted-data/);
-    const arr = JSON.parse(m ? m[1] : txt);
-    const rows = (arr[0] && arr[0].rows) || [];
-    const ultimo = rows.reduce((mx, x) => x.visto_ultimo > mx ? x.visto_ultimo : mx, "");
-    return { rows, gerado_em: ultimo };
-  }
-  function erroMCP(e) {
-    const txt = MSG_MCP[e && e.code] || ("Não consegui consultar o banco agora" + (e && e.message ? ": " + e.message : "."));
-    $("msg").innerHTML = `<div class="notice"><span><strong>Imóveis dos leilões indisponíveis.</strong> ${esc(txt)} Por enquanto, veja os exemplos abaixo.</span><button class="btn" type="button" id="retry">Tentar de novo</button></div>`;
-    $("retry").onclick = () => { $("msg").innerHTML = `<div class="notice"><span><strong>Carregando os imóveis dos leilões…</strong></span></div>`; iniciar(); };
-  }
-  function iniciar() {
-    const carregar = API ? lerAPI().catch(() => fetch("dados.json").then(r => r.json()))
-      : fetch("dados.json").then(r => r.ok ? r.json() : Promise.reject()).then(j => (j && j.rows && j.rows.length) ? j : Promise.reject()).catch(() => lerMCP());
-    carregar.then(j => {
-      apiFim = true;
-      if (!j) { renderMsg(); return; }
-      LEILAO = j.rows.map(fromLeilao);
-      const d = new Date(j.gerado_em);
-      leilaoInfo = "Mega Leilões, atualizado em " + (isNaN(d) ? "–" : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }));
-      rebuild();
-    }).catch(e => { apiFim = true; erroMCP(e); });
-  }
-  iniciar();
+  rebuild();
+  const carregar = API ? lerAPI().catch(() => fetch("dados.json").then(r => r.json())) : fetch("dados.json").then(r => r.json());
+  carregar.then(j => {
+    LEILAO = (j.rows || []).map(fromLeilao);
+    if (j.cambio) FX = j.cambio;
+    atualizado = fmtDataHora(j.gerado_em);
+    estado = "ok";
+    $("fxInfo").textContent = FX.USD ? `Câmbio usado: US$ 1 = ${money(FX.USD * 100, "BRL")}/100 · € 1 = ${money(FX.EUR * 100, "BRL")}/100.` : "";
+    rebuild();
+  }).catch(e => { estado = "error"; erroTxt = e.message || "Tente recarregar a página."; renderMsg(); render(); });
 })();
 
-</script>
-</body></html>
+</script></body></html>
