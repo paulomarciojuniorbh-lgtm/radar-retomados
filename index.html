@@ -195,7 +195,7 @@ button,select,input{font:inherit;color:inherit}
 
   <footer class="foot">
     <span><b>Como o score funciona:</b> desconto sobre o valor de referência de cada fonte (até 40 pts), preço do m² comparado à mediana do mesmo tipo de imóvel na cidade (25), ocupação ou financiamento (15), modalidade de venda (10) e liquidez do tipo de imóvel (10). A nota compara imóveis dentro do mesmo país.</span>
-    <span><b>Fontes:</b> Mega Leilões, Zuk e Resale (Brasil), Hubzu (EUA, Flórida), Ontario Gazette (Canadá, Ontário), Leilosoc (Portugal), Macal (Chile) e Banco Ciudad (Argentina), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência atualizado diariamente. <span class="fx" id="fxInfo"></span></span>
+    <span><b>Fontes:</b> Mega Leilões, Zuk, Superbid/Sold e Resale (Brasil), Hubzu (EUA, Flórida), Ontario Gazette (Canadá, Ontário), Leilosoc (Portugal), Macal (Chile) e Banco Ciudad (Argentina), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência atualizado diariamente. <span class="fx" id="fxInfo"></span></span>
     <span>O score é um filtro para priorizar análise. Não substitui a leitura do edital, da matrícula ou do registo predial, nem a orientação de um advogado no país do imóvel.</span>
   </footer>
 </div>
@@ -324,8 +324,8 @@ function parseCaixaCSV(text) {
 function fromLeilao(x) {
   const pr = x.n_pracas === 1 ? "praça única" : (x.n_pracas ? x.n_pracas + " praças" : "");
   const v1 = x.valor_1 != null ? +x.valor_1 : null, v2 = x.valor_2 != null ? +x.valor_2 : null, va = +x.valor_atual;
-  const LABEL = { mega: "Valor do 1º leilão", hubzu: "Preço de lista", leilosoc: "Valor base", zuk: v2 ? "Valor do 1º leilão" : "Valor de avaliação", resale: "Valor de avaliação", ontario: "Valor venal (assessment)", macal: "Avaliação (não publicada)", ciudad: "Avaliação (não publicada)" };
-  const PRECO = { mega: "Lance mínimo atual", hubzu: "Lance atual", leilosoc: v2 ? "Valor mínimo de venda" : "Lance inicial", zuk: "Lance mínimo atual", resale: "Preço de venda", ontario: "Proposta mínima", macal: "Lance mínimo", ciudad: "Base do leilão" };
+  const LABEL = { mega: "Valor do 1º leilão", hubzu: "Preço de lista", leilosoc: "Valor base", zuk: v2 ? "Valor do 1º leilão" : "Valor de avaliação", resale: "Valor de avaliação", superbid: "Valor de avaliação", ontario: "Valor venal (assessment)", macal: "Avaliação (não publicada)", ciudad: "Avaliação (não publicada)" };
+  const PRECO = { mega: "Lance mínimo atual", hubzu: "Lance atual", leilosoc: v2 ? "Valor mínimo de venda" : "Lance inicial", zuk: "Lance mínimo atual", resale: "Preço de venda", superbid: "Lance inicial / preço", ontario: "Proposta mínima", macal: "Lance mínimo", ciudad: "Base do leilão" };
   // Mega: 1º leilão ainda não aconteceu -> preço atual é o do 1º; o desconto só vale no 2º
   let proximo = null;
   if ((x.fonte === "mega" || x.fonte === "zuk") && v1 && v2 && v2 < v1 && va >= v1 * 0.999) proximo = { valor: v2, data: x.data_2 || null };
@@ -383,8 +383,8 @@ function scoreAll(rows) {
     const parts = [];
     const d = r.desconto ?? 0;
     const pDesc = Math.min(40, (d / 60) * 40);
-    const NOME_D = { caixa: "Desconto sobre a avaliação", resale: "Desconto sobre a avaliação", ontario: "Desconto sobre o valor venal", hubzu: "Desconto sobre o preço de lista", leilosoc: "Desconto sobre o valor base", macal: "Desconto sobre a avaliação", ciudad: "Desconto sobre a avaliação" };
-    const SEM_D = { macal: "a leiloeira não publica avaliação", ciudad: "o banco não publica avaliação", ontario: "sem valor venal, ou mínimo acima dele" };
+    const NOME_D = { caixa: "Desconto sobre a avaliação", resale: "Desconto sobre a avaliação", superbid: "Desconto sobre a avaliação", ontario: "Desconto sobre o valor venal", hubzu: "Desconto sobre o preço de lista", leilosoc: "Desconto sobre o valor base", macal: "Desconto sobre a avaliação", ciudad: "Desconto sobre a avaliação" };
+    const SEM_D = { superbid: "avaliação não informada no anúncio", resale: "avaliação não informada", macal: "a leiloeira não publica avaliação", ciudad: "o banco não publica avaliação", ontario: "sem valor venal, ou mínimo acima dele" };
     parts.push({ nome: NOME_D[r.fonte || "caixa"] || "Desconto sobre o 1º leilão", pts: pDesc, max: 40, nota: r.desconto == null ? (SEM_D[r.fonte] || (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado")) : d.toFixed(1).replace(".", ",") + "% abaixo" });
     const gk = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
     const m = med[gk];
@@ -442,7 +442,14 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
   let TODOS = [], ALL = [], LEILAO = [], CAIXA = [], FX = {}, PAIS = "BR", shown = 30, estado = "loading", erroTxt = "", atualizado = "", caixaFile = "";
 
   const conv = (v, m) => m !== "BRL" && FX[m] && v ? "≈ " + money(v * FX[m], "BRL") : "";
-  const vendedor = r => r.fonte === "caixa" ? "Caixa" : ((r.comitente || "").replace(/^(the\s+)?corp(oration|oratio|\.)?\s+of\s+(the\s+)?/i, "") || "Sem banco (judicial e outros)");
+  const vendedor = r => {
+    if (r.fonte === "caixa") return "Caixa";
+    const c = (r.comitente || "").replace(/^(the\s+)?corp(oration|oratio|\.)?\s+of\s+(the\s+)?/i, "");
+    if (/cresol/i.test(c)) return "Cresol";
+    if (/sicredi/i.test(c)) return "Sicredi";
+    if (/cooperativa de cr[eé]dito/i.test(c)) return "Cooperativas de crédito";
+    return c || "Sem banco (judicial e outros)";
+  };
 
   function rebuild() {
     TODOS = scoreAll([...LEILAO, ...CAIXA].map(r => ({ ...r })));
@@ -489,7 +496,7 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     if (estado === "loading") m.innerHTML = `<div class="notice"><span><strong>Carregando os imóveis…</strong></span></div>`;
     else if (estado === "error") m.innerHTML = `<div class="notice error"><span><strong>Não foi possível carregar.</strong> ${esc(erroTxt)}</span></div>`;
     else {
-      const fonte = { BR: "Mega Leilões, Zuk e Resale (venda direta de bancos)" + (CAIXA.length ? ` + lista da Caixa (${caixaFile})` : ""), US: "Hubzu · imóveis retomados por bancos na Flórida",
+      const fonte = { BR: "Mega Leilões, Zuk, Superbid/Sold e Resale (venda direta de bancos)" + (CAIXA.length ? ` + lista da Caixa (${caixaFile})` : ""), US: "Hubzu · imóveis retomados por bancos na Flórida",
         CA: "Ontario Gazette · vendas de imóveis por impostos atrasados (tax sales) em Ontário", PT: "Leilosoc · leilões em Portugal",
         CL: "Macal · leilões de imóveis de bancos e falências no Chile", AR: "Banco Ciudad · leilões de imóveis em Buenos Aires" }[PAIS];
       const extra = {
