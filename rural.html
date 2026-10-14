@@ -345,7 +345,10 @@ function fromLeilao(x) {
     quartos: x.quartos != null ? +x.quartos : null, vagas: null, fracao: !!x.fracao,
     comitente: x.comitente || null, ocupacao: x.ocupacao || null,
     dataLeilao: proximo && x.data_1 ? x.data_1 : (x.data_2 || x.data_1 || null),
-    inconsistente: !!x.inconsistente
+    inconsistente: !!x.inconsistente,
+    pag: { consorcio: x.pag_consorcio ?? null, fgts: x.pag_fgts ?? null, financiamento: x.pag_financiamento ?? null, parcelado: x.pag_parcelado ?? null, trecho: x.pag_trecho || null },
+    comercialTxt: x.comercial_txt || null, poi300: x.poi300 ?? null, poi800: x.poi800 ?? null, geoNivel: x.geo_nivel || null,
+    lat: x.lat ?? null, lon: x.lon ?? null
   };
 }
 
@@ -374,6 +377,34 @@ function modalidadePeso(m) {
   return { pts: 4, label: "Modalidade não informada" };
 }
 
+// Comércio em volta: lojas, escritórios, bancos, restaurantes e farmácias do OpenStreetMap num raio de 300 m.
+function localComercial(r) {
+  const n = r.poi300, txt = r.comercialTxt;
+  const onde = r.geoNivel === "bairro" ? " (medido pelo centro do bairro)" : "";
+  if (n != null) {
+    let pts, rot;
+    if (n >= 60) { pts = 10; rot = "centro comercial"; }
+    else if (n >= 25) { pts = 7; rot = "rua com bastante comércio"; }
+    else if (n >= 8) { pts = 4; rot = "comércio de bairro"; }
+    else { pts = 1; rot = "área com pouco comércio"; }
+    if (txt && pts < 10) pts = Math.min(10, pts + 2);
+    r.nivelComercial = rot;
+    return { pts, nota: `${rot}: ${n} pontos de comércio a até 300 m${onde}${txt ? "; o anúncio cita " + txt : ""}` };
+  }
+  if (txt) { r.nivelComercial = "citado no anúncio"; return { pts: 6, nota: "o anúncio cita " + txt + " (localização ainda não medida)" }; }
+  return { pts: 3, nota: "localização ainda não medida" };
+}
+
+function formasPagamento(r) {
+  const p = r.pag || {};
+  if (p.consorcio === true) return { pts: 7, nota: "aceita carta de crédito de consórcio" + (p.financiamento ? ", financiamento" : "") + (p.parcelado ? ", parcelamento" : "") };
+  const outras = [p.financiamento && "financiamento", p.parcelado && "parcelamento", p.fgts && "FGTS"].filter(Boolean);
+  if (outras.length) return { pts: 5, nota: "aceita " + outras.join(", ") + (p.consorcio === false ? "; não aceita consórcio" : "") };
+  if (p.consorcio === false && p.parcelado === false) return { pts: 1, nota: "só à vista, sem consórcio" };
+  if (p.consorcio === false) return { pts: 2, nota: "não aceita carta de consórcio" };
+  return { pts: 3, nota: "não informado no anúncio" };
+}
+
 // Score 0–100 com detalhamento. Pesos pensados para investidor que compra para revender ou alugar.
 function scoreAll(rows) {
   const groups = {};
@@ -387,34 +418,38 @@ function scoreAll(rows) {
   for (const r of rows) {
     const parts = [];
     const d = r.desconto ?? 0;
-    const pDesc = Math.min(40, (d / 60) * 40);
+    const pDesc = Math.min(35, (d / 60) * 35);
     const NOME_D = { caixa: "Desconto sobre a avaliação", resale: "Desconto sobre a avaliação", superbid: "Desconto sobre a avaliação", ontario: "Desconto sobre o valor venal", hubzu: "Desconto sobre o preço de lista", leilosoc: "Desconto sobre o valor base", macal: "Desconto sobre a avaliação", ciudad: "Desconto sobre a avaliação" };
     const SEM_D = { superbid: "avaliação não informada no anúncio", resale: "avaliação não informada", macal: "a leiloeira não publica avaliação", ciudad: "o banco não publica avaliação", ontario: "sem valor venal, ou mínimo acima dele" };
-    parts.push({ nome: NOME_D[r.fonte || "caixa"] || "Desconto sobre o 1º leilão", pts: pDesc, max: 40, nota: r.desconto == null ? (SEM_D[r.fonte] || (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado")) : d.toFixed(1).replace(".", ",") + "% abaixo" });
+    parts.push({ nome: NOME_D[r.fonte || "caixa"] || "Desconto sobre o 1º leilão", pts: pDesc, max: 35, nota: r.desconto == null ? (SEM_D[r.fonte] || (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado")) : d.toFixed(1).replace(".", ",") + "% abaixo" });
     const gk = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
     const m = med[gk];
-    let pM2 = 10, notaM2 = "sem área para comparar";
+    let pM2 = 8, notaM2 = "sem área para comparar";
     if (r.pm2 && isFinite(m) && groups[gk].filter(x => x).length >= 3) {
       const rel = r.pm2 / m;
-      pM2 = Math.max(0, Math.min(25, (1.4 - rel) / 0.8 * 25));
+      pM2 = Math.max(0, Math.min(20, (1.4 - rel) / 0.8 * 20));
       notaM2 = Math.round((1 - rel) * 100) + "% vs. mediana da cidade";
       r.relM2 = rel;
     }
-    parts.push({ nome: "Preço do m² na cidade", pts: pM2, max: 25, nota: notaM2 });
+    parts.push({ nome: "Preço do m² na cidade", pts: pM2, max: 20, nota: notaM2 });
     if (r.fonte && r.fonte !== "caixa") {
-      const pOc = r.ocupacao === "desocupado" ? 15 : (r.ocupacao === "ocupado" ? 0 : 5);
-      parts.push({ nome: "Ocupação", pts: pOc, max: 15, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : (r.ocupacao === "ocupado" ? "anunciado como ocupado" : "não informada: verificar no edital") });
+      const pOc = r.ocupacao === "desocupado" ? 12 : (r.ocupacao === "ocupado" ? 0 : 4);
+      parts.push({ nome: "Ocupação", pts: pOc, max: 12, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : (r.ocupacao === "ocupado" ? "anunciado como ocupado" : "não informada: verificar no edital") });
     } else {
-      const pFin = r.financiamento === true ? 15 : (r.financiamento === null ? 7 : 0);
-      parts.push({ nome: "Aceita financiamento", pts: pFin, max: 15, nota: r.financiamento === true ? "sim" : r.financiamento === false ? "não, só à vista" : "não informado" });
+      const pFin = r.financiamento === true ? 12 : (r.financiamento === null ? 6 : 0);
+      parts.push({ nome: "Aceita financiamento", pts: pFin, max: 12, nota: r.financiamento === true ? "sim" : r.financiamento === false ? "não, só à vista" : "não informado" });
     }
     const mod = modalidadePeso(r.modalidade);
-    parts.push({ nome: "Modalidade de venda", pts: mod.pts, max: 10, nota: mod.label });
+    parts.push({ nome: "Modalidade de venda", pts: mod.pts * 0.8, max: 8, nota: mod.label });
     let pLiq = 4;
     if (r.tipo === "Apartamento" || r.tipo === "Casa") pLiq = (r.quartos >= 2 ? 10 : 7);
     else if (r.tipo === "Comercial") pLiq = 6;
     if (r.fracao) pLiq = 1;
-    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq, max: 10, nota: r.fracao ? "só uma fração do imóvel está à venda" : r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
+    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq * 0.8, max: 8, nota: r.fracao ? "só uma fração do imóvel está à venda" : r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
+    const loc = localComercial(r);
+    parts.push({ nome: "Localização comercial", pts: loc.pts, max: 10, nota: loc.nota });
+    const pg = formasPagamento(r);
+    parts.push({ nome: "Formas de pagamento", pts: pg.pts, max: 7, nota: pg.nota });
     r.parts = parts;
     r.score = Math.round(parts.reduce((s, p) => s + p.pts, 0));
     r.lucroBruto = r.avaliacao ? r.avaliacao - r.preco : null;

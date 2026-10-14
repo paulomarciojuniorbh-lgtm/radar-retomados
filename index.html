@@ -134,7 +134,19 @@ button,select,input{font:inherit;color:inherit}
 .alerta{font-size:13px;background:var(--mid-soft);color:var(--ink);padding:8px 10px;border-radius:8px}
 .foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;display:grid;gap:6px;max-width:80ch}
 @media (prefers-reduced-motion:no-preference){.panel{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
-</style></head><body><script>window.RADAR_API = { url: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_imoveis?select=lote,fonte,pais,moeda,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,quartos,banheiros,fracao,visto_ultimo&ativo=eq.true&order=id", fx: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_cambio?select=moeda,brl", key: "sb_publishable_Ji31DC1ihqZTR7gmLeYTLw_GHgBjWN0" };</script><div class="wrap" id="app">
+
+.chip.cons{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.chip.loc{background:var(--accent-soft);color:var(--accent)}
+.pagbox,.locbox{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:8px;margin:0 0 12px}
+.pagbox.ok{border-color:var(--accent);background:var(--accent-soft)}
+.pagbox h3,.locbox h3{margin:0;font-size:15px}
+.pgrid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;font-size:14px}
+.pgrid .sim{color:var(--good);font-weight:600}.pgrid .nao{color:var(--mid);font-weight:600}.pgrid .ni{color:var(--muted)}
+.trecho{margin:0;font-size:13px;font-style:italic;color:var(--muted);overflow-wrap:anywhere}
+.locbox p,.pagbox p{margin:0;font-size:14px}
+.aviso{font-size:12px!important;color:var(--muted)}
+.locbox a{color:var(--accent)}
+</style></head><body><script>window.RADAR_API = { url: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_imoveis?select=lote,fonte,pais,moeda,titulo,tipo,area_m2,uf,cidade,bairro,endereco,comitente,natureza,ocupacao,n_pracas,valor_1,valor_2,valor_atual,desconto_pct,data_1,data_2,link,inconsistente,quartos,banheiros,fracao,visto_ultimo,pag_consorcio,pag_fgts,pag_financiamento,pag_parcelado,pag_trecho,comercial_txt,poi300,poi800,geo_nivel,lat,lon&ativo=eq.true&order=id", fx: "https://ryhyvzwqtktaaonznizn.supabase.co/rest/v1/radar_cambio?select=moeda,brl", key: "sb_publishable_Ji31DC1ihqZTR7gmLeYTLw_GHgBjWN0" };</script><div class="wrap" id="app">
   <header class="top">
     <div class="brand">
       <span class="eyebrow">Imóveis retomados · Brasil e exterior</span>
@@ -174,6 +186,8 @@ button,select,input{font:inherit;color:inherit}
       <div class="f"><label for="fScore">Score mínimo</label><input type="range" id="fScore" min="0" max="90" step="5" value="0"><span class="rangeval" id="fScoreV">0</span></div>
       <label class="check"><input type="checkbox" id="fOcup"> Só desocupados</label>
       <label class="check" id="boxFin"><input type="checkbox" id="fFin"> Só com financiamento (Caixa)</label>
+      <label class="check" id="boxCons"><input type="checkbox" id="fCons"> Aceita carta de consórcio</label>
+      <label class="check" id="boxCom"><input type="checkbox" id="fCom"> Em região comercial</label>
       <button class="reset" id="reset" type="button">Limpar filtros</button>
     </aside>
 
@@ -196,7 +210,7 @@ button,select,input{font:inherit;color:inherit}
 
   <footer class="foot">
     <span><b>Como o score funciona:</b> desconto sobre o valor de referência de cada fonte (até 40 pts), preço do m² comparado à mediana do mesmo tipo de imóvel na cidade (25), ocupação ou financiamento (15), modalidade de venda (10) e liquidez do tipo de imóvel (10). A nota compara imóveis dentro do mesmo país.</span>
-    <span><b>Fontes:</b> Mega Leilões, Zuk, Superbid/Sold e Resale (Brasil), Hubzu (EUA, Flórida), Ontario Gazette (Canadá, Ontário), Leilosoc (Portugal), Macal (Chile) e Banco Ciudad (Argentina), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência atualizado diariamente. <span class="fx" id="fxInfo"></span></span>
+    <span><b>Fontes:</b> Mega Leilões, Zuk, Superbid/Sold e Resale (Brasil), Hubzu (EUA, Flórida), Ontario Gazette (Canadá, Ontário), Leilosoc (Portugal), Macal (Chile) e Banco Ciudad (Argentina), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência atualizado diariamente. Formas de pagamento lidas no anúncio de cada imóvel; comércio em volta medido com dados do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© colaboradores do OpenStreetMap). <span class="fx" id="fxInfo"></span></span>
     <span>O score é um filtro para priorizar análise. Não substitui a leitura do edital, da matrícula ou do registo predial, nem a orientação de um advogado no país do imóvel.</span>
   </footer>
 </div>
@@ -341,7 +355,10 @@ function fromLeilao(x) {
     quartos: x.quartos != null ? +x.quartos : null, vagas: null, fracao: !!x.fracao,
     comitente: x.comitente || null, ocupacao: x.ocupacao || null,
     dataLeilao: proximo && x.data_1 ? x.data_1 : (x.data_2 || x.data_1 || null),
-    inconsistente: !!x.inconsistente
+    inconsistente: !!x.inconsistente,
+    pag: { consorcio: x.pag_consorcio ?? null, fgts: x.pag_fgts ?? null, financiamento: x.pag_financiamento ?? null, parcelado: x.pag_parcelado ?? null, trecho: x.pag_trecho || null },
+    comercialTxt: x.comercial_txt || null, poi300: x.poi300 ?? null, poi800: x.poi800 ?? null, geoNivel: x.geo_nivel || null,
+    lat: x.lat ?? null, lon: x.lon ?? null
   };
 }
 
@@ -370,6 +387,34 @@ function modalidadePeso(m) {
   return { pts: 4, label: "Modalidade não informada" };
 }
 
+// Comércio em volta: lojas, escritórios, bancos, restaurantes e farmácias do OpenStreetMap num raio de 300 m.
+function localComercial(r) {
+  const n = r.poi300, txt = r.comercialTxt;
+  const onde = r.geoNivel === "bairro" ? " (medido pelo centro do bairro)" : "";
+  if (n != null) {
+    let pts, rot;
+    if (n >= 60) { pts = 10; rot = "centro comercial"; }
+    else if (n >= 25) { pts = 7; rot = "rua com bastante comércio"; }
+    else if (n >= 8) { pts = 4; rot = "comércio de bairro"; }
+    else { pts = 1; rot = "área com pouco comércio"; }
+    if (txt && pts < 10) pts = Math.min(10, pts + 2);
+    r.nivelComercial = rot;
+    return { pts, nota: `${rot}: ${n} pontos de comércio a até 300 m${onde}${txt ? "; o anúncio cita " + txt : ""}` };
+  }
+  if (txt) { r.nivelComercial = "citado no anúncio"; return { pts: 6, nota: "o anúncio cita " + txt + " (localização ainda não medida)" }; }
+  return { pts: 3, nota: "localização ainda não medida" };
+}
+
+function formasPagamento(r) {
+  const p = r.pag || {};
+  if (p.consorcio === true) return { pts: 7, nota: "aceita carta de crédito de consórcio" + (p.financiamento ? ", financiamento" : "") + (p.parcelado ? ", parcelamento" : "") };
+  const outras = [p.financiamento && "financiamento", p.parcelado && "parcelamento", p.fgts && "FGTS"].filter(Boolean);
+  if (outras.length) return { pts: 5, nota: "aceita " + outras.join(", ") + (p.consorcio === false ? "; não aceita consórcio" : "") };
+  if (p.consorcio === false && p.parcelado === false) return { pts: 1, nota: "só à vista, sem consórcio" };
+  if (p.consorcio === false) return { pts: 2, nota: "não aceita carta de consórcio" };
+  return { pts: 3, nota: "não informado no anúncio" };
+}
+
 // Score 0–100 com detalhamento. Pesos pensados para investidor que compra para revender ou alugar.
 function scoreAll(rows) {
   const groups = {};
@@ -383,34 +428,38 @@ function scoreAll(rows) {
   for (const r of rows) {
     const parts = [];
     const d = r.desconto ?? 0;
-    const pDesc = Math.min(40, (d / 60) * 40);
+    const pDesc = Math.min(35, (d / 60) * 35);
     const NOME_D = { caixa: "Desconto sobre a avaliação", resale: "Desconto sobre a avaliação", superbid: "Desconto sobre a avaliação", ontario: "Desconto sobre o valor venal", hubzu: "Desconto sobre o preço de lista", leilosoc: "Desconto sobre o valor base", macal: "Desconto sobre a avaliação", ciudad: "Desconto sobre a avaliação" };
     const SEM_D = { superbid: "avaliação não informada no anúncio", resale: "avaliação não informada", macal: "a leiloeira não publica avaliação", ciudad: "o banco não publica avaliação", ontario: "sem valor venal, ou mínimo acima dele" };
-    parts.push({ nome: NOME_D[r.fonte || "caixa"] || "Desconto sobre o 1º leilão", pts: pDesc, max: 40, nota: r.desconto == null ? (SEM_D[r.fonte] || (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado")) : d.toFixed(1).replace(".", ",") + "% abaixo" });
+    parts.push({ nome: NOME_D[r.fonte || "caixa"] || "Desconto sobre o 1º leilão", pts: pDesc, max: 35, nota: r.desconto == null ? (SEM_D[r.fonte] || (r.fonte && r.fonte !== "caixa" ? "leilão de praça única: sem referência" : "sem dado")) : d.toFixed(1).replace(".", ",") + "% abaixo" });
     const gk = (r.pais || "BR") + "|" + r.uf + "|" + r.cidade + "|" + r.tipo;
     const m = med[gk];
-    let pM2 = 10, notaM2 = "sem área para comparar";
+    let pM2 = 8, notaM2 = "sem área para comparar";
     if (r.pm2 && isFinite(m) && groups[gk].filter(x => x).length >= 3) {
       const rel = r.pm2 / m;
-      pM2 = Math.max(0, Math.min(25, (1.4 - rel) / 0.8 * 25));
+      pM2 = Math.max(0, Math.min(20, (1.4 - rel) / 0.8 * 20));
       notaM2 = Math.round((1 - rel) * 100) + "% vs. mediana da cidade";
       r.relM2 = rel;
     }
-    parts.push({ nome: "Preço do m² na cidade", pts: pM2, max: 25, nota: notaM2 });
+    parts.push({ nome: "Preço do m² na cidade", pts: pM2, max: 20, nota: notaM2 });
     if (r.fonte && r.fonte !== "caixa") {
-      const pOc = r.ocupacao === "desocupado" ? 15 : (r.ocupacao === "ocupado" ? 0 : 5);
-      parts.push({ nome: "Ocupação", pts: pOc, max: 15, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : (r.ocupacao === "ocupado" ? "anunciado como ocupado" : "não informada: verificar no edital") });
+      const pOc = r.ocupacao === "desocupado" ? 12 : (r.ocupacao === "ocupado" ? 0 : 4);
+      parts.push({ nome: "Ocupação", pts: pOc, max: 12, nota: r.ocupacao === "desocupado" ? "anunciado como desocupado" : (r.ocupacao === "ocupado" ? "anunciado como ocupado" : "não informada: verificar no edital") });
     } else {
-      const pFin = r.financiamento === true ? 15 : (r.financiamento === null ? 7 : 0);
-      parts.push({ nome: "Aceita financiamento", pts: pFin, max: 15, nota: r.financiamento === true ? "sim" : r.financiamento === false ? "não, só à vista" : "não informado" });
+      const pFin = r.financiamento === true ? 12 : (r.financiamento === null ? 6 : 0);
+      parts.push({ nome: "Aceita financiamento", pts: pFin, max: 12, nota: r.financiamento === true ? "sim" : r.financiamento === false ? "não, só à vista" : "não informado" });
     }
     const mod = modalidadePeso(r.modalidade);
-    parts.push({ nome: "Modalidade de venda", pts: mod.pts, max: 10, nota: mod.label });
+    parts.push({ nome: "Modalidade de venda", pts: mod.pts * 0.8, max: 8, nota: mod.label });
     let pLiq = 4;
     if (r.tipo === "Apartamento" || r.tipo === "Casa") pLiq = (r.quartos >= 2 ? 10 : 7);
     else if (r.tipo === "Comercial") pLiq = 6;
     if (r.fracao) pLiq = 1;
-    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq, max: 10, nota: r.fracao ? "só uma fração do imóvel está à venda" : r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
+    parts.push({ nome: "Liquidez do tipo de imóvel", pts: pLiq * 0.8, max: 8, nota: r.fracao ? "só uma fração do imóvel está à venda" : r.tipo + (r.quartos ? ", " + r.quartos + " quarto(s)" : "") });
+    const loc = localComercial(r);
+    parts.push({ nome: "Localização comercial", pts: loc.pts, max: 10, nota: loc.nota });
+    const pg = formasPagamento(r);
+    parts.push({ nome: "Formas de pagamento", pts: pg.pts, max: 7, nota: pg.nota });
     r.parts = parts;
     r.score = Math.round(parts.reduce((s, p) => s + p.pts, 0));
     r.lucroBruto = r.avaliacao ? r.avaliacao - r.preco : null;
@@ -464,7 +513,7 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     try { history.replaceState(null, "", p === "BR" ? location.pathname : "#" + Object.keys(HASH).find(k => HASH[k] === p)); } catch (e) {}
     ALL = TODOS.filter(r => r.pais === p);
     shown = 30;
-    if (limpar) { $("fUF").value = $("fCidade").value = $("fBanco").value = $("fTipo").value = $("fModal").value = ""; $("fPreco").value = ""; $("fOcup").checked = false; $("fFin").checked = false; }
+    if (limpar) { $("fUF").value = $("fCidade").value = $("fBanco").value = $("fTipo").value = $("fModal").value = ""; $("fPreco").value = ""; $("fOcup").checked = false; $("fFin").checked = false; $("fCons").checked = false; $("fCom").checked = false; }
     const ufs = uniq(ALL.map(r => r.uf).filter(Boolean));
     $("boxUF").hidden = ufs.length < 2;
     fillSelect($("fUF"), "Todos os estados", ufs);
@@ -512,9 +561,9 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
 
   function filtered() {
     const uf = $("fUF").value, c = $("fCidade").value, t = $("fTipo").value, mo = $("fModal").value, bn = $("fBanco").value, oc = $("fOcup").checked;
-    const d = +$("fDesc").value, p = +$("fPreco").value || Infinity, s = +$("fScore").value, f = $("fFin").checked;
+    const d = +$("fDesc").value, p = +$("fPreco").value || Infinity, s = +$("fScore").value, f = $("fFin").checked, cs = $("fCons").checked, cm = $("fCom").checked;
     const r = ALL.filter(x => (!uf || x.uf === uf) && (!c || rotCidade(x) === c) && (!bn || vendedor(x) === bn) && (!oc || x.ocupacao === "desocupado") &&
-      (!t || x.tipo === t) && (!mo || x.modalidade === mo) && (x.desconto ?? 0) >= d && x.preco <= p && x.score >= s && (!f || x.financiamento === true));
+      (!t || x.tipo === t) && (!mo || x.modalidade === mo) && (x.desconto ?? 0) >= d && x.preco <= p && x.score >= s && (!f || x.financiamento === true) && (!cs || x.pag?.consorcio === true) && (!cm || (x.poi300 ?? -1) >= 25 || (x.poi300 == null && !!x.comercialTxt)));
     const by = { score: (a, b) => b.score - a.score, desconto: (a, b) => (b.desconto ?? 0) - (a.desconto ?? 0), preco: (a, b) => a.preco - b.preco, lucro: (a, b) => (b.lucroBruto ?? 0) - (a.lucroBruto ?? 0) }[$("sort").value];
     return r.slice().sort(by);
   }
@@ -534,6 +583,10 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     $("more").hidden = r.length <= shown;
     $("fDescV").textContent = $("fDesc").value + "%";
     $("fScoreV").textContent = $("fScore").value;
+    const nc = ALL.filter(x => x.pag?.consorcio === true).length, nm = ALL.filter(x => (x.poi300 ?? -1) >= 25 || (x.poi300 == null && !!x.comercialTxt)).length;
+    $("boxCons").lastChild.textContent = ` Aceita carta de consórcio (${nc.toLocaleString("pt-BR")})`;
+    $("boxCom").lastChild.textContent = ` Em região comercial (${nm.toLocaleString("pt-BR")})`;
+    $("boxCons").hidden = $("boxCom").hidden = PAIS !== "BR";
     saveFilters();
   }
 
@@ -545,7 +598,10 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
       `<span class="chip">${esc(vendedor(x))}</span>`,
       x.fracao ? '<span class="chip warn">Fração do imóvel</span>' : "",
       x.ocupacao === "desocupado" ? '<span class="chip fin">Desocupado</span>' : (x.ocupacao === "ocupado" ? '<span class="chip warn">Ocupado</span>' : ""),
-      x.financiamento ? '<span class="chip fin">Financiamento</span>' : "",
+      x.pag?.consorcio === true ? '<span class="chip cons">Aceita consórcio</span>' : "",
+      x.financiamento || x.pag?.financiamento ? '<span class="chip fin">Financiamento</span>' : "",
+      x.pag?.parcelado ? '<span class="chip fin">Parcelado</span>' : "",
+      (x.poi300 ?? 0) >= 60 ? '<span class="chip loc">Centro comercial</span>' : ((x.poi300 ?? 0) >= 25 ? '<span class="chip loc">Rua comercial</span>' : ""),
       x.dataLeilao ? `<span class="chip">${x.pais === "BR" || x.pais === "CL" || x.pais === "AR" ? "Leilão" : x.pais === "CA" ? "Propostas até" : "Termina"} ${fmtData(x.dataLeilao)}</span>` : "",
       x.relM2 && x.relM2 < .85 ? `<span class="chip">m² ${Math.round((1 - x.relM2) * 100)}% abaixo</span>` : ""
     ].join("");
@@ -569,6 +625,24 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     CL: ["Pedir o certificado de domínio vigente e o de hipotecas e gravames no Conservador de Bienes Raíces", "Ler as bases do leilão: garantia, comissão da Macal e prazo para pagar o saldo", "Ter RUT chileno para assinar a escritura", "Se estiver ocupado ou arrendado, entender o prazo e o custo para receber o imóvel", "Somar contribuciones (imposto do imóvel) e dívidas de condomínio"],
     AR: ["Ler o edital (condiciones de venta) do Banco Ciudad: garantia, comissão e prazo de pagamento", "Ter CUIT/CDI argentino para participar e escriturar", "Confirmar a moeda: muitos leilões são em dólar e pedem garantia antecipada", "Verificar dívidas de ABL, AySA e expensas que ficam com o comprador", "Visitar o imóvel na data de exibição: é vendido no estado em que se encontra"]
   };
+
+  const SIMNAO = v => v === true ? '<span class="sim">Sim</span>' : v === false ? '<span class="nao">Não</span>' : '<span class="ni">Não informado</span>';
+  function pagHTML(x) {
+    if (x.pais !== "BR") return "";
+    const p = x.pag || {};
+    return `<div class="pagbox${p.consorcio === true ? " ok" : ""}"><h3>Formas de pagamento</h3>
+      <div class="pgrid"><span>Carta de crédito de consórcio</span>${SIMNAO(p.consorcio)}<span>Financiamento</span>${SIMNAO(p.financiamento ?? x.financiamento)}<span>Parcelamento direto</span>${SIMNAO(p.parcelado)}<span>FGTS</span>${SIMNAO(p.fgts)}</div>
+      ${p.trecho ? `<p class="trecho">“${esc(p.trecho)}”</p>` : ""}
+      <p class="aviso">Lido automaticamente do anúncio. Confirme no edital e com a administradora do consórcio antes de dar lance: a carta precisa estar contemplada e o imóvel aprovado por ela.</p></div>`;
+  }
+  function locHTML(x) {
+    if (x.pais !== "BR") return "";
+    const mapa = x.lat != null ? `<a href="https://www.openstreetmap.org/?mlat=${x.lat}&mlon=${x.lon}#map=17/${x.lat}/${x.lon}" target="_blank" rel="noopener">ver no mapa</a>` : "";
+    const txt = x.poi300 != null
+      ? `<b>${x.poi300}</b> pontos de comércio a até 300 m e <b>${x.poi800}</b> a até 800 m${x.geoNivel === "bairro" ? " (medido pelo centro do bairro, endereço exato não localizado)" : ""}. ${mapa}`
+      : (x.comercialTxt ? `O anúncio cita: ${esc(x.comercialTxt)}. Localização ainda não medida.` : "Localização ainda não medida.");
+    return `<div class="locbox"><h3>Comércio em volta${x.nivelComercial ? ` · ${esc(x.nivelComercial)}` : ""}</h3><p>${txt}</p><p class="aviso">Lojas, escritórios, bancos, farmácias e restaurantes mapeados no OpenStreetMap.</p></div>`;
+  }
 
   function openDetail(x) {
     const d = $("detail");
@@ -603,6 +677,8 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
         <div class="fact"><span class="k">Área considerada</span><span class="v">${x.area ? Math.round(x.area).toLocaleString("pt-BR") + " m²" : "–"}</span></div>
         <div class="fact"><span class="k">Preço por m²</span><span class="v">${money(x.pm2, x.moeda)}</span></div>
       </div>
+      ${pagHTML(x)}
+      ${locHTML(x)}
       <div class="desc">${esc(x.descricao)}<br>${esc(x.modalidade)}</div>
       <div class="todo"><h3>Antes de dar lance</h3><ul>${CHECK[x.pais].map(t => `<li>${t}</li>`).join("")}</ul></div>
       <div class="pactions">
@@ -657,7 +733,7 @@ ${x.link || ""}`.trim();
 
   document.querySelectorAll(".pais").forEach(b => b.addEventListener("click", () => trocarPais(b.dataset.pais)));
   $("fUF").addEventListener("input", fillCidades);
-  ["fUF", "fCidade", "fBanco", "fOcup", "fTipo", "fModal", "fDesc", "fPreco", "fScore", "fFin", "sort"].forEach(id => $(id).addEventListener("input", () => { shown = 30; render(); }));
+  ["fUF", "fCidade", "fBanco", "fOcup", "fTipo", "fModal", "fDesc", "fPreco", "fScore", "fFin", "fCons", "fCom", "sort"].forEach(id => $(id).addEventListener("input", () => { shown = 30; render(); }));
   $("reset").onclick = () => { $("fDesc").value = 0; $("fScore").value = 0; trocarPais(PAIS, true); };
   $("more").onclick = () => { shown += 30; render(); };
   $("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) openDetail(TODOS[+b.dataset.i]); });
