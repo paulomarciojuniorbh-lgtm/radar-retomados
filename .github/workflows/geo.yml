@@ -1,0 +1,32 @@
+name: Localização e comércio em volta (OpenStreetMap)
+on:
+  workflow_dispatch:
+  push:
+    paths: ["geo/**", ".github/workflows/geo.yml"]
+  schedule:
+    - cron: "23 5 * * *"   # todo dia, 02:23 de Brasília (só geolocaliza o que é novo)
+permissions:
+  contents: write
+concurrency: { group: geo, cancel-in-progress: false }
+jobs:
+  geo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install osmium scipy numpy
+      - run: python geo/localizar.py
+      - name: Resumo
+        if: always()
+        run: echo "::notice title=Resultado::$(tr -d '\n' < data/geo_status.json 2>/dev/null || echo sem status)"
+      - name: Salvar resultado
+        if: always()
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data/geo_cache.json data/geo_imoveis.json data/geo_status.json 2>/dev/null || true
+          git diff --cached --quiet || git commit -m "Localização dos imóveis atualizada"
+          git pull --rebase origin main
+          git push
