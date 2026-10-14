@@ -1,0 +1,12 @@
+{
+ "inicio": "2026-10-14T20:29:08.640115+00:00",
+ "imoveis": 5222,
+ "consultas_novas": 3845,
+ "localizados": 2986,
+ "por_nivel": {
+  "rua": 2009,
+  "bairro": 977
+ },
+ "pontos_comerciais_osm": 222848,
+ "fim": "2026-10-14T22:01:00.886742+00:00"
+}
