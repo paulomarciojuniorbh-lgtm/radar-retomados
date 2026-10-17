@@ -1,12 +1,12 @@
 {
- "inicio": "2026-10-16T09:55:33.223109+00:00",
- "imoveis": 5019,
- "consultas_novas": 50,
- "localizados": 2930,
+ "inicio": "2026-10-17T09:28:56.138136+00:00",
+ "imoveis": 5078,
+ "consultas_novas": 47,
+ "localizados": 2958,
  "por_nivel": {
-  "rua": 2002,
-  "bairro": 928
+  "rua": 2025,
+  "bairro": 933
  },
- "pontos_comerciais_osm": 222895,
- "fim": "2026-10-16T10:16:56.077845+00:00"
+ "pontos_comerciais_osm": 224608,
+ "fim": "2026-10-17T09:46:18.850276+00:00"
 }
