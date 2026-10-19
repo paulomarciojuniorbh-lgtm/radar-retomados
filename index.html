@@ -747,18 +747,20 @@ ${x.link || ""}`.trim();
   // dados: API ao vivo; se falhar, a foto publicada junto com o site
   const API = window.RADAR_API;
   async function lerAPI() {
-    const rows = [];
-    for (let off = 0; off < 20000; off += 1000) {
+    // páginas de 1000 buscadas em paralelo (antes eram em sequência: ~6 s; agora ~1-2 s)
+    const pagina = async off => {
       const r = await fetch(`${API.url}&limit=1000&offset=${off}`, { headers: { apikey: API.key } });
       if (!r.ok) throw new Error("o servidor respondeu HTTP " + r.status + ". Tente recarregar a página.");
-      const page = await r.json();
-      rows.push(...page);
-      if (page.length < 1000) break;
+      return r.json();
+    };
+    const fxP = fetch(API.fx, { headers: { apikey: API.key } }).then(f => f.ok ? f.json() : []).catch(() => []);
+    const rows = [];
+    for (let base = 0; base < 30000; base += 8000) {
+      const pages = await Promise.all([0, 1, 2, 3, 4, 5, 6, 7].map(i => pagina(base + i * 1000)));
+      for (const pg of pages) rows.push(...pg);
+      if (pages[7].length < 1000) break;
     }
-    try {
-      const f = await fetch(API.fx, { headers: { apikey: API.key } });
-      if (f.ok) for (const c of await f.json()) FX[c.moeda] = +c.brl;
-    } catch (e) {}
+    for (const c of await fxP) FX[c.moeda] = +c.brl;
     return { rows, gerado_em: rows.reduce((m, x) => x.visto_ultimo > m ? x.visto_ultimo : m, "") };
   }
   rebuild();
