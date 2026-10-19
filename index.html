@@ -210,7 +210,7 @@ button,select,input{font:inherit;color:inherit}
 
   <footer class="foot">
     <span><b>Como o score funciona:</b> desconto sobre o valor de referência de cada fonte (até 40 pts), preço do m² comparado à mediana do mesmo tipo de imóvel na cidade (25), ocupação ou financiamento (15), modalidade de venda (10) e liquidez do tipo de imóvel (10). A nota compara imóveis dentro do mesmo país.</span>
-    <span><b>Fontes:</b> Mega Leilões, Zuk, Superbid/Sold e Resale (Brasil), Hubzu (EUA, Flórida), Ontario Gazette (Canadá, Ontário), Leilosoc (Portugal), Macal (Chile) e Banco Ciudad (Argentina), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência atualizado diariamente. Formas de pagamento lidas no anúncio de cada imóvel; comércio em volta medido com dados do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© colaboradores do OpenStreetMap). <span class="fx" id="fxInfo"></span></span>
+    <span><b>Fontes:</b> Mega Leilões, Zuk, Superbid/Sold e Resale (Brasil), Hubzu (EUA, Flórida), Ontario Gazette (Canadá, Ontário), Leilosoc (Portugal), Macal (Chile), Banco Ciudad e AABE, a agência de bens do Estado nacional (Argentina), coletadas todo dia de manhã a partir de anúncios públicos; câmbio de referência atualizado diariamente. Formas de pagamento lidas no anúncio de cada imóvel; comércio em volta medido com dados do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (© colaboradores do OpenStreetMap). <span class="fx" id="fxInfo"></span></span>
     <span>O score é um filtro para priorizar análise. Não substitui a leitura do edital, da matrícula ou do registo predial, nem a orientação de um advogado no país do imóvel.</span>
   </footer>
 </div>
@@ -548,12 +548,12 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     else {
       const fonte = { BR: "Mega Leilões, Zuk, Superbid/Sold e Resale (venda direta de bancos)" + (CAIXA.length ? ` + lista da Caixa (${caixaFile})` : ""), US: "Hubzu · imóveis retomados por bancos na Flórida",
         CA: "Ontario Gazette · vendas de imóveis por impostos atrasados (tax sales) em Ontário", PT: "Leilosoc · leilões em Portugal",
-        CL: "Macal · leilões de imóveis de bancos e falências no Chile", AR: "Banco Ciudad · leilões de imóveis em Buenos Aires" }[PAIS];
+        CL: "Macal · leilões de imóveis de bancos e falências no Chile", AR: "Banco Ciudad e AABE · leilões de imóveis de heranças vacantes e do Estado nacional" }[PAIS];
       const extra = {
         PT: " Portugal ainda tem poucas fontes abertas: a lista vai crescer com novas leiloeiras.",
         CA: " Atenção: a lei canadense proíbe estrangeiros não residentes de comprar imóvel residencial (proibição válida até 1º/1/2027, podendo ser prorrogada). Terrenos e comerciais podem ter regras diferentes: confirme com advogado.",
         CL: " A Macal não publica valor de avaliação, então a nota compara o preço do m² entre imóveis da mesma comuna.",
-        AR: " O Banco Ciudad leiloa poucos imóveis por vez (em geral heranças vacantes da cidade); a lista muda a cada leilão."
+        AR: " Na Argentina, banco quase não retoma imóvel: o que vai a leilão são heranças vacantes (Banco Ciudad) e imóveis do Estado nacional (AABE), poucos por vez. A lista muda a cada leilão."
       }[PAIS] || "";
       m.innerHTML = `<div class="source">Fonte: <b>${esc(fonte)}</b>, atualizado em ${esc(atualizado)}.${extra}</div>`;
     }
@@ -623,7 +623,7 @@ if (typeof module !== "undefined") module.exports = { fromLeilao, parseCaixaCSV,
     PT: ["Pedir a certidão permanente do registo predial e verificar ónus", "Somar IMT, Imposto do Selo e IMI ao preço", "Ler as condições do leilão: caução, prazos e forma de pagamento", "Ter NIF português para poder comprar", "Se for fração do imóvel, entender os direitos dos outros proprietários"],
     CA: ["Confirmar se você pode comprar: estrangeiros não residentes estão proibidos de comprar imóvel residencial (regra válida até 1º/1/2027, podendo ser prorrogada)", "Ler o aviso completo da prefeitura e pedir o formulário oficial de proposta (Form 7)", "A proposta é fechada e vence a maior: a proposta mínima só cobre os impostos atrasados", "Separar 20% da proposta para o depósito em cheque administrativo, mais impostos de transferência e NRST", "Pesquisar o título: a prefeitura não garante o título nem entrega o imóvel desocupado"],
     CL: ["Pedir o certificado de domínio vigente e o de hipotecas e gravames no Conservador de Bienes Raíces", "Ler as bases do leilão: garantia, comissão da Macal e prazo para pagar o saldo", "Ter RUT chileno para assinar a escritura", "Se estiver ocupado ou arrendado, entender o prazo e o custo para receber o imóvel", "Somar contribuciones (imposto do imóvel) e dívidas de condomínio"],
-    AR: ["Ler o edital (condiciones de venta) do Banco Ciudad: garantia, comissão e prazo de pagamento", "Ter CUIT/CDI argentino para participar e escriturar", "Confirmar a moeda: muitos leilões são em dólar e pedem garantia antecipada", "Verificar dívidas de ABL, AySA e expensas que ficam com o comprador", "Visitar o imóvel na data de exibição: é vendido no estado em que se encontra"]
+    AR: ["Ler o edital (condiciones de venta) do Banco Ciudad ou da AABE: garantia, comissão e prazo de pagamento", "Ter CUIT/CDI argentino para participar e escriturar", "Confirmar a moeda: muitos leilões são em dólar e pedem garantia antecipada", "Verificar dívidas de ABL, AySA e expensas que ficam com o comprador", "Visitar o imóvel na data de exibição: é vendido no estado em que se encontra"]
   };
 
   const SIMNAO = v => v === true ? '<span class="sim">Sim</span>' : v === false ? '<span class="nao">Não</span>' : '<span class="ni">Não informado</span>';
